@@ -4,7 +4,7 @@
 
 A empresa solicitou uma aplicação de previsão do tempo para que usuários consultem informações meteorológicas de cidades. A experiência deve permitir localizar uma cidade, visualizar as condições atuais e a previsão para os próximos cinco dias, escolher entre Celsius e Fahrenheit e utilizar a aplicação em dispositivos móveis.
 
-O briefing define as capacidades principais, mas ainda não especifica público-alvo, fontes de dados, regras de busca, detalhes das informações meteorológicas nem critérios de qualidade mensuráveis. Esses pontos devem ser esclarecidos antes de consolidar a especificação do produto.
+Além das capacidades principais, já foram definidas algumas decisões de produto: fonte Open-Meteo, previsão de hoje mais quatro dias, Celsius como unidade inicial, ausência de autenticação e persistência de servidor, e interface em pt-BR. Público-alvo, detalhes das informações meteorológicas, regras de busca e critérios de qualidade ainda precisam ser esclarecidos.
 
 ## Personas Hipotéticas
 
@@ -52,15 +52,25 @@ As estimativas são iniciais e devem ser revistas após decisões sobre público
 
 | Categoria | Risco | Probabilidade | Impacto | Estratégia de mitigação |
 |---|---|---|---|---|
-| Técnico — Dados externos | Indisponibilidade, lentidão, limites de consulta ou mudança de contrato do provedor podem interromper ou degradar as consultas. | Média | Alto: clima atual e previsão podem ficar inacessíveis ou incompletos. | Avaliar cobertura, SLA, limites, licença e histórico do provedor antes da escolha; definir timeout, tratamento de erro, monitoramento e estratégia de contingência compatível com o contrato. |
+| Técnico — Dados externos | Indisponibilidade, lentidão, limites de consulta ou mudança nas condições do Open-Meteo podem interromper ou degradar as consultas. | Média | Alto: clima atual e previsão podem ficar inacessíveis ou incompletos. | Validar cobertura, limites, licença e condições de uso do Open-Meteo; definir timeout, tratamento de erro, monitoramento e estratégia de contingência compatível com os termos do serviço. |
 | Técnico — Atualidade e qualidade dos dados | Dados podem estar atrasados, incompletos ou ter cobertura desigual entre localidades. | Média | Alto: usuários podem tomar decisões com informações incorretas ou antigas. | Definir requisitos de atualização e cobertura; exibir horário da última atualização e sinalizar dados expirados; validar respostas e monitorar falhas de qualidade. |
 | Produto — Busca de cidades | Cidades homônimas ou variações de grafia podem levar à seleção de uma localidade incorreta. | Média | Alto: a previsão apresentada pode não corresponder à cidade procurada. | Definir cobertura e comportamento de busca; mostrar contexto suficiente para distinguir resultados, como região e país; testar nomes ambíguos e variantes com acentos. |
-| Produto — Interpretação da previsão | “Cinco dias” pode significar períodos diferentes, e o fuso horário pode deslocar datas e horários. | Média | Médio: conteúdo e expectativa do usuário podem divergir, gerando retrabalho em UI, API e testes. | Confirmar se o dia atual está incluído, a granularidade e o fuso; documentar a regra e validá-la com usuários antes da implementação. |
+| Produto — Interpretação da previsão | Embora o período definido seja hoje mais quatro dias, a granularidade e o fuso horário ainda podem levar a interpretações diferentes. | Média | Médio: conteúdo e expectativa do usuário podem divergir, gerando retrabalho em UI, API e testes. | Manter a regra de hoje mais quatro dias e definir a granularidade e o fuso; documentar a apresentação das datas e validá-la com usuários. |
 | Produto — Escopo e aderência | Sem público-alvo, objetivo ou métrica de sucesso, o time pode priorizar funcionalidades que não resolvem a necessidade principal. | Alta | Alto: baixo uso ou insatisfação mesmo com as funções implementadas. | Validar personas e cenários prioritários com stakeholders e usuários; definir métricas de sucesso e critérios de aceite antes de fechar a spec. |
 | Técnico — Desempenho e disponibilidade | Dependência de rede e de API externa pode fazer as respostas excederem as expectativas de velocidade ou disponibilidade. | Média | Alto: abandono, repetição de consultas e perda de confiança. | Acordar metas mensuráveis e condições de medição; instrumentar tempos e erros; definir limites de espera, retentativas controladas e estados de carregamento/erro. |
 | Técnico — Conversão de unidades | Arredondamento incorreto ou atualização parcial dos valores ao alternar entre Celsius e Fahrenheit pode produzir dados inconsistentes. | Baixa | Médio: confusão e perda de confiança nos valores exibidos. | Centralizar conversão e formatação; definir regra de arredondamento; testar todos os valores e componentes que exibem temperatura em ambas as unidades. |
 | Técnico — Compatibilidade móvel e acessibilidade | Suporte indefinido de dispositivos, navegadores e tecnologias assistivas pode deixar grupos de usuários sem acesso às funções principais. | Média | Alto: experiência quebrada, barreiras de acesso e possíveis falhas de conformidade. | Definir matriz de suporte e padrão de acessibilidade; validar fluxos principais em viewports móveis, teclado e leitor de tela como parte dos critérios de aceite. |
-| Produto/Técnico — Privacidade | Consultas de cidade ou eventual uso de localização podem ser enviados ou armazenados sem regras claras. | Baixa | Alto: risco de coleta desnecessária, perda de confiança e obrigações de conformidade. | Evitar coletar localização automática sem necessidade e consentimento; mapear dados enviados ao provedor, retenção e analytics; validar requisitos de privacidade antes do lançamento. |
+| Produto/Técnico — Privacidade | Consultas de cidade enviadas ao provedor ou eventual telemetria podem ser registradas sem regras claras. | Baixa | Alto: risco de coleta desnecessária, perda de confiança e obrigações de conformidade. | Não persistir dados de usuário no servidor; mapear dados enviados ao Open-Meteo e eventual telemetria, além de retenção e consentimento; validar requisitos de privacidade antes do lançamento. |
+
+## Decisões
+
+| Decisão | Justificativa | Pergunta em aberto que resolve |
+|---|---|---|
+| **Fonte de dados: Open-Meteo, sem API key.** | Evita exigir uma chave de API na integração inicial e define o provedor meteorológico do produto. | Resolve qual provedor será usado. Permanecem pendentes a confirmação de cobertura, limites, condições de uso e dos endpoints/campos necessários. |
+| **Período da previsão: hoje mais os quatro dias seguintes.** | Torna explícito como contar os cinco dias solicitados. | Resolve se o dia atual está incluído. Granularidade e fuso horário ainda precisam ser definidos. |
+| **Unidade padrão: Celsius.** | Define a unidade exibida na primeira consulta. | Resolve qual unidade será usada inicialmente. A persistência da preferência escolhida pelo usuário continua em aberto. |
+| **Sem autenticação e sem persistência de servidor.** | Mantém o escopo sem contas e evita armazenar dados de usuário no servidor. | Resolve se haverá login/contas e armazenamento de dados de usuário no servidor. Não decide armazenamento local no navegador nem registros mantidos pelo provedor externo. |
+| **Idioma da interface: pt-BR.** | Define o idioma padrão da experiência para o público inicial. | Resolve qual idioma a interface deve apresentar. Não define a cobertura geográfica da busca nem outros idiomas futuros. |
 
 ## Ambiguidades, Perguntas em Aberto e Impactos
 
@@ -70,14 +80,14 @@ As prioridades abaixo são preliminares: **Crítica** indica potencial de altera
 |---|---|---|
 | Produto — Crítica | Quem é o público-alvo, qual necessidade principal o app deve resolver e como o sucesso será medido? | O produto pode entregar funcionalidades sem atender à necessidade prioritária; decisões de experiência e escopo ficam sem critério de valor. |
 | Plataforma — Crítica | “Usar em dispositivos móveis” significa web responsiva, aplicativo nativo ou ambos? Quais navegadores, sistemas e larguras de tela serão suportados? | Escopo, arquitetura e esforço podem mudar; a responsividade não terá uma matriz objetiva de validação. |
-| Dados e integração — Crítica | Qual provedor meteorológico será usado e quais são suas condições de custo, licença, cobertura, limites e atribuição? | A integração pode precisar ser refeita ou ficar limitada por custo, cobertura ou restrições contratuais. |
+| Dados e integração — Alta | Quais endpoints e campos do Open-Meteo serão necessários e quais são as condições de cobertura, limites, licença e atribuição aplicáveis? | A integração pode ficar incompleta ou limitada por cobertura, volume de consultas ou condições de uso. |
 | Busca e localização — Alta | Quais países e localidades a busca deve cobrir, quais formatos deve aceitar e como diferenciar cidades homônimas? | Usuários podem não encontrar uma cidade ou consultar dados de uma localidade incorreta. |
 | Clima atual — Alta | Quais campos definem o clima atual e qual idade máxima dos dados ainda será considerada atual? | A tela pode omitir informações esperadas ou apresentar dados antigos como atuais. |
-| Previsão — Alta | Os cinco dias incluem hoje? A previsão será diária, horária ou ambas, e em qual fuso horário serão apresentados dias e horários? | O período e a interpretação da previsão podem divergir do esperado, afetando dados, interface e testes de aceite. |
-| Unidades — Alta | Celsius ou Fahrenheit será a unidade inicial? A troca afeta todas as temperaturas, como será feito o arredondamento e a preferência será preservada? | A interface pode misturar unidades ou perder a escolha do usuário entre telas e sessões. |
+| Previsão — Alta | Definido hoje mais quatro dias, a previsão será diária, horária ou ambas, e em qual fuso serão apresentados dias e horários? | A granularidade ou as datas podem divergir da expectativa, afetando dados, interface e testes de aceite. |
+| Unidades — Alta | A troca entre Celsius e Fahrenheit afeta todos os campos? Qual regra de arredondamento será usada e a preferência será salva localmente no navegador ou reiniciada em cada sessão? | Valores podem aparecer inconsistentes ou a preferência pode se comportar de modo inesperado após recarregar ou reabrir a aplicação. |
 | Falhas e conectividade — Alta | Como o app deve agir sem resultados, em timeout, indisponibilidade do provedor ou perda de conexão? Pode exibir dados em cache e como sinaliza sua idade? | Falhas podem deixar a experiência sem orientação ou levar o usuário a confiar em uma previsão desatualizada. |
 | Qualidade operacional — Alta | As metas propostas de desempenho (95% em até 3 s) e disponibilidade (99,5% ao mês) são aceitáveis? Sob quais condições e limites do provedor serão medidas? | Não haverá critério objetivo para avaliar rapidez e confiabilidade, nem para alinhar compromissos com a dependência externa. |
-| Acessibilidade — Média | WCAG 2.2 nível AA é o padrão esperado? Quais tecnologias assistivas e idiomas/localidades devem ser cobertos? | Barreiras de uso e problemas de conformidade podem ser descobertos tarde, exigindo retrabalho na interface e nos testes. |
+| Acessibilidade — Média | WCAG 2.2 nível AA é o padrão esperado e quais tecnologias assistivas devem ser cobertas nos testes? | Barreiras de uso e problemas de conformidade podem ser descobertos tarde, exigindo retrabalho na interface e nos testes. |
 
 As metas numéricas e prioridades registradas neste discovery são hipóteses para discussão; devem ser validadas com as partes interessadas antes de se tornarem critérios de aceite.
 
@@ -85,6 +95,6 @@ As metas numéricas e prioridades registradas neste discovery são hipóteses pa
 
 - A pesquisa e a consulta meteorológica partem de uma cidade escolhida pelo usuário; localização automática não foi solicitada.
 - Celsius e Fahrenheit são unidades de apresentação para a mesma informação de temperatura, sem alterar a cidade ou o período consultado.
-- “Previsão de 5 dias” significa uma previsão associada à cidade selecionada para um período de cinco dias, mas a inclusão do dia atual permanece pendente de confirmação.
+- A previsão de cinco dias cobre hoje e os quatro dias seguintes, conforme decisão registrada acima.
 - A aplicação deve oferecer as funcionalidades principais em telas móveis; a faixa de largura proposta é um ponto inicial sujeito à confirmação.
 - O briefing não solicita cadastro, favoritos, notificações, mapas ou outros recursos; eles não fazem parte do escopo confirmado nesta análise.
