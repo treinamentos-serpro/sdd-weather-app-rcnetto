@@ -15,7 +15,8 @@ relacionados da spec também se aplicam.
 - **Descrição:** Criar a raiz da aplicação e montar o componente principal no
   ponto de entrada React.
 - **Critérios de aceite:**
-  - `pnpm dev` inicia sem erro de compilação e renderiza `App` no elemento raiz.
+  - `pnpm dev` inicia sem erro de compilação e renderiza um `<main>` com
+    cabeçalho visível de Weather App no elemento raiz.
   - `pnpm build` termina com código zero.
 - **Dependências:** Nenhuma.
 - **Arquivos prováveis:** `src/main.tsx`, `src/App.tsx`.
@@ -368,39 +369,56 @@ relacionados da spec também se aplicam.
 
 ## Entrega 6 — Integração da aplicação
 
-### T-25 — Compor a tela com hook e componentes
+### T-25 — Integrar a primeira fatia de busca e seleção
 
-- **Descrição:** Conectar formulário, resultados, consulta, estados e
-  apresentação em `App`.
+- **Descrição:** Conectar formulário, resultados e estados de busca em `App`
+  para entregar uma primeira experiência utilizável de pesquisa de cidades.
 - **Critérios de aceite:**
-  - Uma busca válida pode ser confirmada, resultado selecionado e conteúdo
-    meteorológico correspondente renderizado.
-  - Busca e Forecast mantêm seus estados independentes na tela.
-  - Retry executa a mesma operação e não apresenta dados antigos como atuais.
-  - Atribuição Open-Meteo aparece nas condições atuais e na previsão; os
-    estados assíncronos usam os componentes acessíveis correspondentes.
-- **Dependências:** T-02, T-10, T-11, T-12, T-13, T-14, T-15, T-16, T-17, T-18, T-19, T-20, T-21, T-22, T-23, T-24
+  - A pessoa pode confirmar busca, ver resultados identificados por cidade,
+    região/estado e país, selecionar uma localidade e ver a seleção refletida
+    na tela.
+  - Busca vazia, loading, vazio e erro são comunicados; retry repete a mesma
+    consulta.
+  - O fluxo integrado não inicia Forecast até que uma cidade seja selecionada.
+- **Dependências:** T-02, T-10, T-11, T-15, T-16, T-17, T-24
 - **Arquivos prováveis:** `src/App.tsx`.
 - **Tipo:** UI
-- **Requisitos:** RF-01, RF-02, RF-03, RF-06, RF-07, RF-08.
+- **Requisitos:** RF-01, RF-06, RF-07.
 
-### T-26 — Ajustar layout responsivo da aplicação
+### T-26 — Integrar clima e previsão à aplicação
+
+- **Descrição:** Compor em `App` a seleção da cidade, a consulta de Forecast,
+  unidade, atribuição e as visões meteorológicas.
+- **Critérios de aceite:**
+  - A cidade selecionada aciona Forecast com sua identidade/coordenadas e a
+    tela apresenta condições atuais e previsão correspondentes.
+  - Busca e Forecast exibem estados independentes; retry repete a operação
+    correta e falhas não mostram dados em cache como atuais.
+  - Unidade, atribuição Open-Meteo e indicação de atualização estão presentes
+    nas visões correspondentes.
+- **Dependências:** T-13, T-14, T-18, T-19, T-20, T-21, T-22, T-23, T-25
+- **Arquivos prováveis:** `src/App.tsx`.
+- **Tipo:** UI
+- **Requisitos:** RF-01, RF-02, RF-03, RF-04, RF-05, RF-06, RF-07, RF-08,
+  RNF-09.
+
+### T-27 — Ajustar layout responsivo da aplicação
 
 - **Descrição:** Aplicar layout responsivo sem rolagem horizontal nos
   breakpoints da spec.
 - **Critérios de aceite:**
   - Em larguras 320, 375, 768, 1024 e 1440 CSS px, `scrollWidth` do documento
     não excede `clientWidth`.
-  - Containers de busca, condições atuais, previsão de cinco dias e unidade
-    ajustam-se às larguras sem cortar texto ou controles.
-- **Dependências:** T-02, T-15, T-16, T-17, T-18, T-20, T-21, T-22, T-23, T-24, T-25
-- **Arquivos prováveis:** `src/App.tsx`, `src/styles/index.css`.
+  - Busca, seleção, condições atuais, previsão de cinco dias e unidade não
+    cortam texto ou controles nessas larguras.
+- **Dependências:** T-26
+- **Arquivos prováveis:** `src/styles/index.css`.
 - **Tipo:** UI
 - **Requisitos:** RNF-01.
 
 ## Entrega 7 — Testes unitários, de componentes e E2E
 
-### T-27 — Testar conversão e arredondamento de temperatura
+### T-28 — Testar conversão e arredondamento de temperatura
 
 - **Descrição:** Cobrir a função de temperatura com testes unitários puros.
 - **Critérios de aceite:**
@@ -413,7 +431,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-04.
 
-### T-28 — Testar descrições de códigos WMO
+### T-29 — Testar descrições de códigos WMO
 
 - **Descrição:** Verificar códigos mapeados e desconhecidos.
 - **Critérios de aceite:**
@@ -425,7 +443,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-02, RF-03, RNF-07.
 
-### T-29 — Testar formatação de datas e horas por fuso
+### T-30 — Testar formatação de datas e horas por fuso
 
 - **Descrição:** Cobrir formatação local, mudança de dia e casos sazonais.
 - **Critérios de aceite:**
@@ -438,7 +456,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-03, RF-05, RNF-06, RNF-07.
 
-### T-30 — Testar request e mapeamento de geocoding
+### T-31 — Testar request e mapeamento de geocoding
 
 - **Descrição:** Testar contrato HTTP e normalização do serviço com `fetch`
   mockado.
@@ -452,12 +470,12 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-01.
 
-### T-31 — Testar falhas e timeout de geocoding
+### T-32 — Testar falhas e timeout de geocoding
 
 - **Descrição:** Verificar os modos de falha do serviço de busca.
 - **Critérios de aceite:**
-  - Testes cobrem HTTP não-OK, rejeição de rede, JSON ilegível, estrutura
-    inválida e timeout de 10 segundos usando mocks/timers.
+  - `fetch` mockado cobre HTTP não-OK, rejeição de rede, JSON ilegível e
+    estrutura inválida; timer controlado cobre timeout de 10 segundos.
   - Cada cenário rejeita com erro; nenhum cenário retorna sucesso vazio como
     fallback.
 - **Dependências:** T-07
@@ -465,7 +483,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-06, RF-07.
 
-### T-32 — Testar validação e estados da busca no hook
+### T-33 — Testar validação e estados da busca no hook
 
 - **Descrição:** Verificar transições e validação do hook com serviço mockado.
 - **Critérios de aceite:**
@@ -478,7 +496,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-01, RF-07.
 
-### T-33 — Testar concorrência e retry de geocoding
+### T-34 — Testar concorrência e retry de geocoding
 
 - **Descrição:** Testar ordenação concorrente e retry no hook de busca.
 - **Critérios de aceite:**
@@ -491,7 +509,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-01, RF-06.
 
-### T-34 — Testar formulário de busca
+### T-35 — Testar formulário de busca
 
 - **Descrição:** Cobrir submissão explícita e acessibilidade básica do
   formulário.
@@ -504,7 +522,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-01, RF-07, RNF-05.
 
-### T-35 — Testar seleção e identificação de cidades
+### T-36 — Testar seleção e identificação de cidades
 
 - **Descrição:** Verificar apresentação e seleção exata de resultados.
 - **Critérios de aceite:**
@@ -516,12 +534,14 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-01.
 
-### T-36 — Testar estados visíveis das consultas
+### T-37 — Testar componentes nos estados loading, erro e vazio
 
-- **Descrição:** Validar os estados reutilizáveis de busca e Forecast na UI.
+- **Descrição:** Testar explicitamente o componente de estado assíncrono para
+  busca e Forecast em loading, erro e vazio.
 - **Critérios de aceite:**
-  - Testing Library distingue loading, vazio e erro por texto/role acessível
-    para os dois tipos de operação.
+  - Testing Library renderiza o componente em `loading`, `error` e `empty` para
+    cada tipo de operação e verifica conteúdo/role acessível esperado.
+  - Estado loading e vazio usam `role="status"`; erro usa `role="alert"`.
   - Ativar retry chama o callback da operação indicada; não há retry no estado
     vazio.
 - **Dependências:** T-17
@@ -529,21 +549,21 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-06, RF-07, RNF-05.
 
-### T-37 — Testar request e falhas do Forecast
+### T-38 — Testar request e falhas do Forecast
 
 - **Descrição:** Verificar contrato HTTP e modos de falha do serviço.
 - **Critérios de aceite:**
-  - Testes mockados validam endpoint, coordenadas e todos os parâmetros
+  - `fetch` mockado confirma endpoint, coordenadas e todos os parâmetros
     requeridos.
-  - Testes cobrem HTTP não-OK, falha de rede, JSON ilegível e timeout de até
-    10 segundos.
+  - `fetch` mockado cobre HTTP não-OK, falha de rede e JSON ilegível; timer
+    controlado cobre timeout de até 10 segundos.
   - Nenhum teste acessa Open-Meteo.
 - **Dependências:** T-08
 - **Arquivos prováveis:** `tests/unit/services/forecastService.test.ts`.
 - **Tipo:** Test
 - **Requisitos:** RF-06.
 
-### T-38 — Testar normalização do Forecast
+### T-39 — Testar normalização do Forecast
 
 - **Descrição:** Cobrir mapeamento, associação paralela e dados incompletos
   com fixtures locais.
@@ -558,7 +578,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-02, RF-03, RF-08.
 
-### T-39 — Testar seleção e estados do Forecast no hook
+### T-40 — Testar seleção e estados do Forecast no hook
 
 - **Descrição:** Cobrir o fluxo normal e estados de Forecast com o serviço
   mockado.
@@ -572,7 +592,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-01, RF-02, RF-03, RF-08.
 
-### T-40 — Testar concorrência e retry do Forecast
+### T-41 — Testar concorrência e retry do Forecast
 
 - **Descrição:** Validar respostas tardias, timeout e recuperação manual.
 - **Critérios de aceite:**
@@ -585,7 +605,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-06.
 
-### T-41 — Testar painel de condições atuais
+### T-42 — Testar painel de condições atuais
 
 - **Descrição:** Cobrir apresentação de dados completos, parciais e
   indisponíveis.
@@ -599,7 +619,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-02, RF-08.
 
-### T-42 — Testar indicação de atualidade
+### T-43 — Testar indicação de atualidade
 
 - **Descrição:** Verificar os limites e casos inválidos de observação.
 - **Critérios de aceite:**
@@ -611,7 +631,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-05, RNF-06.
 
-### T-43 — Testar resumos diários
+### T-44 — Testar resumos diários
 
 - **Descrição:** Verificar cinco datas na ordem e representação de campos
   diários ausentes.
@@ -626,7 +646,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-03, RF-08.
 
-### T-44 — Testar expansão e pontos horários
+### T-45 — Testar expansão e pontos horários
 
 - **Descrição:** Verificar interação de expansão e associação ao dia escolhido.
 - **Critérios de aceite:**
@@ -639,7 +659,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-03, RNF-05.
 
-### T-45 — Testar alternância de unidade na tela
+### T-46 — Testar alternância de unidade na tela
 
 - **Descrição:** Verificar propagação da unidade para toda temperatura
   apresentada, sem nova consulta.
@@ -648,12 +668,12 @@ relacionados da spec também se aplicam.
     horários, antes/depois de expansão e troca de cidade.
   - Alternar unidade não chama geocoding nem Forecast.
   - Nova montagem inicia em Celsius.
-- **Dependências:** T-14, T-22, T-25
+- **Dependências:** T-14, T-22, T-26
 - **Arquivos prováveis:** `tests/unit/components/TemperatureUnitToggle.test.tsx`.
 - **Tipo:** Test
 - **Requisitos:** RF-04.
 
-### T-46 — Testar composição da tela
+### T-47 — Testar composição da tela
 
 - **Descrição:** Validar o fluxo integrado entre busca, seleção, consulta e
   retry no limite da aplicação.
@@ -662,23 +682,23 @@ relacionados da spec também se aplicam.
   - Teste de erro permite retry da operação apropriada sem apagar o estado da
     outra.
   - Nenhuma chamada de rede real é executada.
-- **Dependências:** T-25
+- **Dependências:** T-25, T-26
 - **Arquivos prováveis:** `tests/unit/App.test.tsx`.
 - **Tipo:** Test
 - **Requisitos:** RF-01, RF-02, RF-06, RF-07.
 
-### T-47 — Testar atribuição do provedor
+### T-48 — Testar atribuição do provedor
 
 - **Descrição:** Verificar presença e destino do link de atribuição.
 - **Critérios de aceite:**
   - Testing Library confirma texto Open-Meteo e `href` oficial em condição
     atual e previsão.
-- **Dependências:** T-23, T-25
+- **Dependências:** T-23, T-26
 - **Arquivos prováveis:** `tests/unit/components/WeatherAttribution.test.tsx`.
 - **Tipo:** Test
 - **Requisitos:** RNF-09.
 
-### T-48 — Testar anúncios e nomes acessíveis dos estados
+### T-49 — Testar anúncios e nomes acessíveis dos estados
 
 - **Descrição:** Verificar estrutura acessível dos indicadores e controles de
   estado.
@@ -687,12 +707,12 @@ relacionados da spec também se aplicam.
     `role="alert"` para erro em busca e Forecast.
   - Botões de retry têm nome acessível que identifica busca ou consulta
     meteorológica.
-- **Dependências:** T-24, T-25
+- **Dependências:** T-24, T-26
 - **Arquivos prováveis:** `tests/unit/components/AsyncStatus.test.tsx`.
 - **Tipo:** Test
 - **Requisitos:** RNF-05.
 
-### T-49 — Testar fluxo E2E de busca e seleção
+### T-50 — Testar fluxo E2E de busca e seleção
 
 - **Descrição:** Cobrir a busca confirmada, lista vazia e seleção entre
   localidades ambíguas com fixtures interceptadas.
@@ -707,7 +727,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Test
 - **Requisitos:** RF-01, RF-07.
 
-### T-50 — Testar fluxo E2E meteorológico e retry
+### T-51 — Testar fluxo E2E meteorológico e retry
 
 - **Descrição:** Cobrir condições atuais, previsão, retry e alternância de
   unidade no navegador.
@@ -718,28 +738,31 @@ relacionados da spec também se aplicam.
     dado atual.
   - Alternância °C/°F altera as temperaturas visíveis sem aumentar o número
     de requests interceptados.
-- **Dependências:** T-23, T-25
+- **Dependências:** T-23, T-26
 - **Arquivos prováveis:** `tests/e2e/weather-forecast.spec.ts`.
 - **Tipo:** Test
 - **Requisitos:** RF-02, RF-03, RF-04, RF-06, RNF-09.
 
-### T-51 — Testar viewport responsivo e fluxo por teclado
+### T-52 — Testar E2E do fluxo principal em viewport mobile
 
-- **Descrição:** Validar os fluxos essenciais nos viewports definidos e por
-  navegação de teclado.
+- **Descrição:** Executar o percurso principal da busca até a previsão com
+  Playwright, incluindo viewport mobile e navegação por teclado.
 - **Critérios de aceite:**
-  - E2E executa os fluxos essenciais nas larguras 320, 375, 768, 1024 e
-    1440 px e verifica ausência de rolagem horizontal.
-  - Busca, seleção, alternância e expansão horária são concluíveis por teclado
-    em viewport mobile.
-- **Dependências:** T-26, T-49, T-50
-- **Arquivos prováveis:** `tests/e2e/responsive-keyboard.spec.ts`.
+  - E2E percorre busca confirmada, seleção de cidade, condições atuais,
+    previsão de cinco dias e expansão de detalhes horários com respostas
+    interceptadas; não acessa API real.
+  - O fluxo completo passa em viewport desktop de 1440 px e mobile de
+    375 × 812 px, sem rolagem horizontal.
+  - Em viewport mobile, busca, seleção, alternância de unidade e expansão
+    horária são concluíveis por teclado.
+- **Dependências:** T-26, T-27, T-50, T-51
+- **Arquivos prováveis:** `tests/e2e/weather-main-flow-mobile.spec.ts`.
 - **Tipo:** Test
 - **Requisitos:** RNF-01, RNF-05.
 
 ## Entrega 8 — Hardening e prontidão para lançamento
 
-### T-52 — Documentar privacidade e compartilhamento de consulta
+### T-53 — Documentar privacidade e compartilhamento de consulta
 
 - **Descrição:** Criar política informando o envio da consulta ao provedor e
   as práticas de privacidade da versão.
@@ -755,7 +778,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Infra
 - **Requisitos:** RNF-08.
 
-### T-53 — Validar compatibilidade de navegadores e leitores de tela
+### T-54 — Validar compatibilidade de navegadores e leitores de tela
 
 - **Descrição:** Executar revisão manual nos ambientes suportados e registrar
   resultados e bloqueadores.
@@ -768,12 +791,12 @@ relacionados da spec também se aplicam.
   - Uma avaliação automatizada WCAG 2.2 AA e a revisão manual são registradas;
     violações confirmadas são resolvidas ou mantêm o lançamento bloqueado.
   - Resultado registra ambiente, fluxo, sucesso/falha e defeitos encontrados.
-- **Dependências:** T-48, T-51
+- **Dependências:** T-49, T-52
 - **Arquivos prováveis:** `docs/validation/accessibility-compatibility.md`.
 - **Tipo:** Test
 - **Requisitos:** RNF-01, RNF-05.
 
-### T-54 — Medir desempenho das operações meteorológicas
+### T-55 — Medir desempenho das operações meteorológicas
 
 - **Descrição:** Medir o tempo de geocoding e Forecast em rede controlada e
   registrar os resultados.
@@ -783,12 +806,12 @@ relacionados da spec também se aplicam.
   - p95 de cada operação, medido da ação até conteúdo visível, é no máximo
     3 segundos; falhas e timeouts são reportados em separado.
   - Documento registra configuração da rede, amostras, p95 e falhas/timeout.
-- **Dependências:** T-49, T-50
+- **Dependências:** T-50, T-51
 - **Arquivos prováveis:** `docs/validation/performance.md`.
 - **Tipo:** Test
 - **Requisitos:** RNF-03.
 
-### T-55 — Configurar medição externa de disponibilidade
+### T-56 — Configurar medição externa de disponibilidade
 
 - **Descrição:** Configurar ou documentar monitoramento da disponibilidade da
   interface separado do provedor de clima.
@@ -804,7 +827,7 @@ relacionados da spec também se aplicam.
 - **Tipo:** Infra
 - **Requisitos:** RNF-04.
 
-### T-56 — Conduzir teste moderado de usabilidade
+### T-57 — Conduzir teste moderado de usabilidade
 
 - **Descrição:** Medir conclusão da tarefa principal sem treinamento ou ajuda.
 - **Critérios de aceite:**
@@ -814,12 +837,12 @@ relacionados da spec também se aplicam.
     e identificação correta das cinco datas.
   - O registro não coleta a métrica por telemetria e descreve método,
     contagem de conclusão e impedimentos.
-- **Dependências:** T-50, T-51
+- **Dependências:** T-51, T-52
 - **Arquivos prováveis:** `docs/validation/usability-test.md`.
 - **Tipo:** Test
 - **Requisitos:** RNF-02, RNF-08.
 
-### T-57 — Verificar termos e limites do Open-Meteo antes do lançamento
+### T-58 — Verificar termos e limites do Open-Meteo antes do lançamento
 
 - **Descrição:** Confirmar se o uso sem chave e a atribuição estão de acordo
   com as condições vigentes do provedor.
@@ -830,12 +853,12 @@ relacionados da spec também se aplicam.
     até configurar acesso permitido.
   - Nenhuma troca de provedor ou remoção de atribuição ocorre sem revisão da
     especificação.
-- **Dependências:** T-23, T-52
+- **Dependências:** T-23, T-53
 - **Arquivos prováveis:** `docs/validation/provider-terms.md`.
 - **Tipo:** Infra
 - **Requisitos:** RNF-08, RNF-09.
 
-### T-58 — Inspecionar privacidade da aplicação em execução
+### T-59 — Inspecionar privacidade da aplicação em execução
 
 - **Descrição:** Verificar chamadas, cookies e armazenamento produzidos pelos
   fluxos funcionais no navegador.
@@ -847,7 +870,135 @@ relacionados da spec também se aplicam.
     persistidas em localStorage, sessionStorage ou IndexedDB.
   - Resultado da inspeção e as exceções técnicas necessárias à conexão são
     documentados.
-- **Dependências:** T-49, T-50, T-52
+- **Dependências:** T-50, T-51, T-53
 - **Arquivos prováveis:** `docs/validation/privacy-inspection.md`.
 - **Tipo:** Test
 - **Requisitos:** RNF-08.
+
+## Priorização e tamanho relativo
+
+Prioridade indica ordem de valor para a primeira versão: **P0** é essencial
+para entregar o fluxo principal ou é bloqueador de lançamento; **P1** é
+necessário para completar a qualidade/aceitação da versão após a primeira fatia
+visível; **P2** é hardening operacional que pode ser implantado depois do
+primeiro fluxo, sem dispensar o requisito correspondente. Tamanho é relativo,
+não uma estimativa de duração: **P** é escopo contido; **M** envolve vários
+casos/estados de uma responsabilidade; **G** envolve validação ampla ou
+coordenação externa.
+
+| Tarefa | Prioridade | Tamanho | Tarefa | Prioridade | Tamanho |
+|---|---|---|---|---|---|
+| T-01 | P0 | P | T-31 | P1 | P |
+| T-02 | P0 | P | T-32 | P1 | M |
+| T-03 | P0 | P | T-33 | P0 | M |
+| T-04 | P0 | P | T-34 | P1 | M |
+| T-05 | P0 | M | T-35 | P0 | P |
+| T-06 | P0 | M | T-36 | P0 | P |
+| T-07 | P0 | M | T-37 | P0 | P |
+| T-08 | P0 | M | T-38 | P0 | M |
+| T-09 | P0 | G | T-39 | P1 | M |
+| T-10 | P0 | M | T-40 | P1 | M |
+| T-11 | P1 | M | T-41 | P0 | M |
+| T-12 | P0 | M | T-42 | P0 | M |
+| T-13 | P1 | M | T-43 | P1 | P |
+| T-14 | P0 | P | T-44 | P0 | P |
+| T-15 | P0 | P | T-45 | P1 | M |
+| T-16 | P0 | P | T-46 | P0 | M |
+| T-17 | P0 | P | T-47 | P0 | M |
+| T-18 | P0 | M | T-48 | P1 | P |
+| T-19 | P0 | P | T-49 | P1 | P |
+| T-20 | P0 | M | T-50 | P0 | M |
+| T-21 | P1 | M | T-51 | P0 | M |
+| T-22 | P1 | P | T-52 | P0 | G |
+| T-23 | P0 | P | T-53 | P1 | G |
+| T-24 | P0 | P | T-54 | P1 | G |
+| T-25 | P0 | M | T-55 | P2 | M |
+| T-26 | P0 | M | T-56 | P1 | M |
+| T-27 | P1 | M | T-57 | P0 | M |
+| T-28 | P0 | P | T-58 | P1 | M |
+| T-29 | P1 | P | T-59 | P1 | M |
+| T-30 | P1 | P |  |  |  |
+
+## Sequência sugerida em fatias verticais
+
+Cada fatia combina implementação com seus testes dedicados, mesmo que a seção
+do backlog mantenha os testes agrupados depois da integração.
+
+1. **Busca de cidade visível:** T-01, T-02, T-03, T-07, T-10, T-11, T-15,
+   T-16, T-17, T-24 e T-25; validar com T-31, T-32, T-33, T-34, T-35, T-36,
+   T-37 e T-50. Entrega busca confirmada, seleção sem confundir homônimos,
+   estados loading/erro/vazio e retry.
+2. **Condições atuais e previsão:** T-05, T-06, T-08, T-09, T-12, T-13,
+   T-18, T-19, T-20, T-23 e T-26; validar com T-29, T-38, T-39, T-40, T-42,
+   T-43, T-44, T-47 e T-51. Entrega uma consulta selecionada com condições
+   atuais, atualização, cinco dias e atribuição.
+3. **Unidades, horas e experiência mobile:** T-04, T-14, T-21, T-22 e T-27;
+   validar com T-28, T-45, T-46 e T-52. Confirma todas as temperaturas em
+   °C/°F, detalhes horários e fluxo principal no viewport mobile.
+4. **Prontidão de lançamento:** T-53, T-54, T-55, T-56, T-57, T-58 e T-59.
+   Completa validações de acessibilidade/compatibilidade, desempenho,
+   disponibilidade, usabilidade, termos do provedor e privacidade.
+
+## Rastreabilidade dos requisitos funcionais
+
+As tarefas de implementação são listadas primeiro; tarefas de teste que
+verificam os mesmos requisitos aparecem depois do ponto e vírgula.
+
+| Requisito da spec | Tarefas correspondentes | Cobertura |
+|---|---|---|
+| RF-01 — Pesquisar e selecionar cidades | T-07, T-10, T-11, T-15, T-16, T-25; T-31, T-32, T-33, T-34, T-35, T-36, T-50 | Coberto: parâmetros e resultados, confirmação explícita, validação, identidade de homônimos, concorrência e retry. |
+| RF-02 — Consultar condições atuais | T-08, T-09, T-12, T-18, T-26; T-38, T-39, T-42, T-47, T-51 | Coberto: indicadores, unidades, dados parciais e seleção da cidade. |
+| RF-03 — Consultar previsão diária e horária | T-08, T-09, T-12, T-20, T-21, T-26; T-30, T-38, T-39, T-44, T-45, T-51 | Coberto: cinco dias, detalhes horários, fuso local e transições sazonais. |
+| RF-04 — Alternar unidade de temperatura | T-04, T-14, T-22, T-26; T-28, T-46, T-51, T-52 | Coberto: Celsius inicial, conversão a partir do original, alcance global e ausência de request adicional. |
+| RF-05 — Informar atualização dos dados | T-06, T-09, T-19, T-20; T-30, T-39, T-43, T-44 | Coberto: hora local da observação, aviso após 60 minutos e atualização de Forecast explicitamente indisponível. |
+| RF-06 — Tratar indisponibilidade e permitir nova tentativa | T-07, T-08, T-10, T-11, T-12, T-13, T-17, T-24, T-25, T-26; T-32, T-33, T-37, T-38, T-40, T-41, T-47, T-51 | Coberto: erro de API/rede, timeout de 10 segundos, retry manual e descarte de resposta tardia sem cache apresentado como atual. |
+| RF-07 — Comunicar estados de consulta | T-07, T-10, T-15, T-17, T-24, T-25; T-31, T-32, T-33, T-35, T-37, T-49, T-50 | Coberto: loading, vazio, erro acessível, busca vazia sem request e edição/reenvio. |
+| RF-08 — Apresentar respostas meteorológicas parciais | T-09, T-12, T-18, T-20, T-26; T-39, T-42, T-44, T-47, T-51 | Coberto: campos/dias indisponíveis sem inventar valores ou deslocar datas, mantendo previsão disponível. |
+
+**Requisitos funcionais sem tarefa correspondente:** nenhum RF-01 a RF-08 ficou
+sem tarefa de implementação e teste associada.
+
+## Prompt para o Coding Agent — T-01
+
+```text
+Você é o Coding Agent do Weather App. Implemente somente T-01 — Criar
+composição e entrada React, conforme o backlog, a especificação e o plano
+técnico existentes no repositório.
+
+Contexto
+- O projeto usa React 19, TypeScript strict, Vite e pnpm.
+- `index.html` já contém `<div id="root"></div>` e carrega
+  `/src/main.tsx`; use esse ponto de montagem existente.
+- A aplicação ainda não possui os arquivos da camada `src/`.
+- T-01 é apenas o shell inicial. Não implemente busca, clima, estilos/Tailwind,
+  serviços, estado meteorológico ou chamadas de rede; essas responsabilidades
+  pertencem a tarefas posteriores.
+- Antes de editar, confirme que `specs/weather-app-spec.md`,
+  `plans/weather-app-plan.md` e `tasks/weather-app-tasks.md` existem e leia os
+  critérios de T-01. Leia também `.github/instructions/react.instructions.md`
+  e `.github/instructions/tailwind.instructions.md` antes de editar arquivos
+  abrangidos por essas instruções.
+
+Arquivos
+- Criar `src/main.tsx`: montar `App` no elemento `#root` usando a API de
+  montagem do React 19 e `StrictMode`. Trate explicitamente a ausência do
+  elemento raiz com erro claro; não use `any` nem casts desnecessários.
+- Criar `src/App.tsx`: exportar um componente funcional default que renderiza
+  um `<main>` semântico com um cabeçalho visível “Weather App”. Manter o
+  componente pequeno e sem dependências de rede.
+- Não editar `index.html`, configurações, dependências ou arquivos fora do
+  escopo sem necessidade demonstrável para satisfazer os critérios.
+
+Critérios de aceite
+1. `pnpm dev` inicia sem erro e a página apresenta o cabeçalho “Weather App”
+   dentro de `<main>` montado em `#root`.
+2. `pnpm build` termina com código zero em TypeScript strict.
+3. A mudança inclui somente os arquivos de T-01 e não adiciona chamada de API,
+   estado de produto ou estilo pertencente a tarefa posterior.
+4. Rode `pnpm lint`, `pnpm build` e `pnpm test`. Informe o resultado exato de
+   cada comando; se algum falhar por estado preexistente ou configuração,
+   reporte a falha sem escondê-la nem ampliar o escopo.
+
+Ao concluir, resuma os arquivos criados, os critérios atendidos e os comandos
+executados com seus resultados.
+```
