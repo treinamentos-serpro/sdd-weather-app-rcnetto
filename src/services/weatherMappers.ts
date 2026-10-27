@@ -56,7 +56,7 @@ function metric(value: unknown, min = -Infinity, max = Infinity): number | null 
 }
 
 function code(value: unknown): number | null {
-  return finite(value) && Number.isInteger(value) && value >= 0 ? value : null;
+  return finite(value) && Number.isInteger(value) ? value : null;
 }
 
 function at(record: RecordData, key: string, index: number): unknown {

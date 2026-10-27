@@ -382,8 +382,8 @@ sem comprimir índices. Não há fallback ao relógio ou current.time. Arrays
 métricos curtos/ausentes geram null; current max/min usam a data current.time.
 Horários inválidos/ausentes são null (pontos hourly sem horário válido são
 descartados); hourly ausente é []. Números finitos; umidade/probabilidade
-[0,100], vento/precipitação >=0, pressão >0, WMO inteiro não negativo
-(desconhecidos preservados). forecastUpdatedAt permanece null.
+[0,100], vento/precipitação >=0, pressão >0, WMO inteiro
+(códigos desconhecidos preservados). forecastUpdatedAt permanece null.
 
 useWeather expõe status idle/loading/success/error/empty, data WeatherData|null,
 cities City[], error string|null, query confirmada com trim (inicial vazia),

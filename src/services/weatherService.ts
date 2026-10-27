@@ -5,11 +5,16 @@ import { mapCities, mapWeather, validCoordinates } from './weatherMappers';
 export { WeatherServiceError } from './fetchWithTimeout';
 
 export async function searchCities(name: string): Promise<City[]> {
-  if (/[\u0000-\u001f\u007f-\u009f]/.test(name)) {
-    throw new WeatherServiceError('O nome da cidade contém caracteres de controle inválidos.');
-  }
   const query = name.trim();
   if (!query) return [];
+  if (
+    Array.from(name).some((char) => {
+      const code = char.charCodeAt(0);
+      return code < 32 || (code >= 127 && code <= 159);
+    })
+  ) {
+    throw new WeatherServiceError('O nome da cidade contém caracteres de controle inválidos.');
+  }
   const json = await fetchWithTimeout(
     `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=pt&format=json`,
   );

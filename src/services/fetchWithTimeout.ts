@@ -30,7 +30,8 @@ export async function fetchWithTimeout(url: string): Promise<unknown> {
       const json: unknown = await response.json();
       return json;
     } catch (error: unknown) {
-      if (isAbortError(error)) throw error;
+      if (error instanceof WeatherServiceError || isAbortError(error)) throw error;
+      if (error instanceof TypeError) throw new WeatherServiceError('Falha de rede.');
       throw new WeatherServiceError('O serviço retornou JSON ilegível.');
     }
   };

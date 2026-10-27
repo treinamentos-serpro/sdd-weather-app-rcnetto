@@ -97,17 +97,22 @@ export function useWeather() {
       const token = ++generation.current;
       failed.current = null;
       const query = name.trim();
-      if (/[\u0000-\u001f\u007f-\u009f]/.test(name)) {
+      if (!query) {
+        setState(initialState);
+        return;
+      }
+      if (
+        Array.from(name).some((char) => {
+          const code = char.charCodeAt(0);
+          return code < 32 || (code >= 127 && code <= 159);
+        })
+      ) {
         setState({
           ...initialState,
           query,
           status: 'error',
           error: 'O nome da cidade contém caracteres de controle inválidos.',
         });
-        return;
-      }
-      if (!query) {
-        setState(initialState);
         return;
       }
       setState({ ...initialState, query, status: 'loading' });

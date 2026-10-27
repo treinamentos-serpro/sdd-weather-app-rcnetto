@@ -123,7 +123,7 @@ valores inválidos viram `null`, nunca zero inventado.
   - Um request sem resposta é encerrado em até 10 segundos; não há retry ou
     cache automático no serviço.
 - **Dependências:** T-03
-- **Arquivos prováveis:** `src/services/geocodingService.ts`.
+- **Arquivos prováveis:** `src/services/weatherService.ts`.
 - **Tipo:** Data
 - **Requisitos:** RF-01, RF-06, RF-07.
 
@@ -139,7 +139,7 @@ valores inválidos viram `null`, nunca zero inventado.
   - Request sem resposta é encerrado em até 10 segundos; o serviço não executa
     polling, retry automático ou cache.
 - **Dependências:** T-03
-- **Arquivos prováveis:** `src/services/forecastService.ts`.
+- **Arquivos prováveis:** `src/services/weatherService.ts`.
 - **Tipo:** Data
 - **Requisitos:** RF-02, RF-03, RF-06, RF-08.
 
@@ -157,7 +157,7 @@ valores inválidos viram `null`, nunca zero inventado.
   - `forecastUpdatedAt` é `null`; `generationtime_ms` não é usado como
     timestamp.
 - **Dependências:** T-03, T-06, T-08
-- **Arquivos prováveis:** `src/services/forecastMapper.ts`.
+- **Arquivos prováveis:** `src/services/weatherMappers.ts`.
 - **Tipo:** Data
 - **Requisitos:** RF-02, RF-03, RF-05, RF-08, RNF-06.
 
@@ -197,8 +197,8 @@ valores inválidos viram `null`, nunca zero inventado.
 - **Descrição:** Fazer o hook consultar Forecast para as coordenadas da
   localidade escolhida.
 - **Critérios de aceite:**
-  - Forecast começa automaticamente para o primeiro resultado e, na seleção posterior, recebe latitude/longitude da cidade
-    selecionada, não somente o nome.
+  - Forecast começa automaticamente para o primeiro resultado e, na seleção
+    posterior, recebe latitude/longitude da cidade selecionada, não somente o nome.
   - Estado Forecast é separado do estado da busca.
   - Resposta parcial com pelo menos um dado utilizável é `success`; ausência de
     dados utilizáveis é `empty`.
@@ -402,7 +402,8 @@ valores inválidos viram `null`, nunca zero inventado.
     na tela.
   - Busca vazia, loading, vazio e erro são comunicados; retry repete a mesma
     consulta.
-  - O fluxo seleciona automaticamente o primeiro resultado e permite seleção posterior sem perder a lista.
+  - O fluxo seleciona automaticamente o primeiro resultado e permite seleção
+    posterior sem perder a lista.
 - **Dependências:** T-02, T-10, T-11, T-15, T-16, T-17, T-24
 - **Arquivos prováveis:** `src/App.tsx`.
 - **Tipo:** UI
@@ -511,7 +512,7 @@ valores inválidos viram `null`, nunca zero inventado.
     ordem preservada e truncamento em 10.
   - Testes não fazem conexão com Open-Meteo.
 - **Dependências:** T-07
-- **Arquivos prováveis:** `tests/unit/services/geocodingService.test.ts`.
+- **Arquivos prováveis:** `tests/unit/services/weatherService.test.ts`.
 - **Tipo:** Test
 - **Requisitos:** RF-01.
 
@@ -524,7 +525,7 @@ valores inválidos viram `null`, nunca zero inventado.
   - Cada cenário rejeita com erro; nenhum cenário retorna sucesso vazio como
     fallback.
 - **Dependências:** T-07
-- **Arquivos prováveis:** `tests/unit/services/geocodingService.test.ts`.
+- **Arquivos prováveis:** `tests/unit/services/weatherService.test.ts`.
 - **Tipo:** Test
 - **Requisitos:** RF-06, RF-07.
 
@@ -604,7 +605,7 @@ valores inválidos viram `null`, nunca zero inventado.
     controlado cobre timeout de até 10 segundos.
   - Nenhum teste acessa Open-Meteo.
 - **Dependências:** T-08
-- **Arquivos prováveis:** `tests/unit/services/forecastService.test.ts`.
+- **Arquivos prováveis:** `tests/unit/services/weatherService.test.ts`.
 - **Tipo:** Test
 - **Requisitos:** RF-06.
 
@@ -619,7 +620,7 @@ valores inválidos viram `null`, nunca zero inventado.
     arrays parciais e estrutura ilegível.
   - Datas dos dias seguintes não são deslocadas por campos ausentes.
 - **Dependências:** T-09
-- **Arquivos prováveis:** `tests/unit/services/forecastMapper.test.ts`.
+- **Arquivos prováveis:** `tests/unit/services/weatherService.test.ts`.
 - **Tipo:** Test
 - **Requisitos:** RF-02, RF-03, RF-08.
 
@@ -629,7 +630,8 @@ valores inválidos viram `null`, nunca zero inventado.
   mockado.
 - **Critérios de aceite:**
   - Testes verificam coordenadas exatas da cidade selecionada e ausência de
-    request antes do retorno do Geocoding; depois consulta a primeira cidade automaticamente.
+    request antes do retorno do Geocoding; depois consulta a primeira cidade
+    automaticamente.
   - Testes verificam sucesso completo, sucesso parcial, vazio e erro.
   - Concluir/falhar Forecast não apaga o estado independente da busca.
 - **Dependências:** T-12

@@ -4,9 +4,9 @@
 
 O Weather App é uma aplicação web responsiva, em português do Brasil, para o
 público geral consultar o clima de cidades do mundo todo. A pessoa usuária
-pesquisa uma cidade; o primeiro resultado é selecionado automaticamente para visualizar as condições atuais e a
-previsão de hoje e dos quatro dias seguintes. A experiência também permite
-alternar entre Celsius e Fahrenheit e consultar detalhes horários da previsão.
+pesquisa uma cidade; o primeiro resultado é selecionado automaticamente para
+visualizar as condições atuais e a previsão de hoje e dos quatro dias seguintes.
+A experiência também permite alternar entre Celsius e Fahrenheit e consultar detalhes horários da previsão.
 
 O produto utiliza o Open-Meteo como fonte de dados meteorológicos. Não exige
 autenticação e não mantém persistência de dados de usuário no servidor. A
@@ -37,7 +37,8 @@ Questions.
   paginação nesta versão. A busca é enviada somente quando a pessoa confirma a
   consulta, não a cada tecla. Havendo resultados, o primeiro é selecionado
   automaticamente e seu Forecast é consultado. A lista permanece disponível
-  para escolha posterior de outra localidade, inclusive homônimos. A seleção mantém a identidade exata da localidade
+  para escolha posterior de outra localidade, inclusive homônimos.
+  A seleção mantém a identidade exata da localidade
   retornada, inclusive quando há cidades homônimas.
 - **RF-02 — Consultar condições atuais:** para a cidade selecionada, o produto
   deve apresentar em português a condição do tempo, temperatura atual, sensação
