@@ -27,12 +27,15 @@ Questions.
 ## Functional Requirements
 
 - **RF-01 — Pesquisar e selecionar cidades:** a pessoa usuária deve poder
-  pesquisar cidades em qualquer país por nome completo ou parcial. Antes da
-  busca, espaços no início e no fim são removidos; a correspondência ignora
-  maiúsculas/minúsculas e acentos, mas não corrige erros de digitação. Cada
-  resultado identifica cidade, país e região/estado quando disponível. A
-  seleção deve manter a identidade exata da localidade retornada, inclusive
-  quando há cidades homônimas.
+  pesquisar cidades disponíveis no catálogo mundial do provedor por nome
+  completo ou parcial. Antes da busca, espaços no início e no fim são removidos;
+  a correspondência ignora maiúsculas/minúsculas e acentos, mas não corrige
+  erros de digitação. Cada resultado identifica cidade, país e região/estado
+  quando disponível. A aplicação exibe até 10 resultados na ordem de relevância
+  retornada pelo serviço; não oferece paginação nesta versão. A busca é enviada
+  somente quando a pessoa confirma a consulta, não a cada tecla. A seleção
+  mantém a identidade exata da localidade retornada, inclusive quando há
+  cidades homônimas.
 - **RF-02 — Consultar condições atuais:** para a cidade selecionada, o produto
   deve apresentar em português a condição do tempo, temperatura atual, sensação
   térmica, máxima e mínima do dia local, umidade em porcentagem e velocidade do
@@ -40,10 +43,10 @@ Questions.
 - **RF-03 — Consultar previsão diária e horária:** para a cidade selecionada,
   o produto deve apresentar para hoje e os quatro dias seguintes um resumo com
   condição do tempo e temperaturas máxima e mínima. Deve ser possível consultar
-  sob demanda detalhes por hora, incluindo horário local, condição do tempo e
-  temperatura. As descrições devem ser apresentadas em português; datas e
-  horários devem corresponder ao fuso horário local da cidade, inclusive nas
-  mudanças de horário sazonal.
+  sob demanda os detalhes por hora de cada dia exibido, incluindo horário
+  local, condição do tempo e temperatura. As descrições devem ser apresentadas
+  em português; datas e horários devem corresponder ao fuso horário local da
+  cidade, inclusive nas mudanças de horário sazonal.
 - **RF-04 — Alternar unidade de temperatura:** a pessoa usuária deve poder
   alternar entre Celsius e Fahrenheit. Celsius é a unidade inicial. A seleção
   vale até o recarregamento da página ou o início de uma nova visita, não sendo
@@ -51,11 +54,14 @@ Questions.
   atual, da previsão diária e dos detalhes horários, com arredondamento para o
   grau inteiro mais próximo.
 - **RF-05 — Informar atualização dos dados:** o produto deve informar o horário
-  de referência/atualização fornecido pela fonte, em fuso local da cidade, e
-  sinalizar dados cuja idade exceda 60 minutos. A idade deve ser calculada em
-  relação ao relógio atual em UTC. Uma resposta bem-sucedida com dados antigos
-  pode ser exibida somente com indicação explícita de desatualização. Timestamp
-  ausente ou inválido não pode ser apresentado como recente.
+  da observação atual fornecido pela fonte, em fuso local da cidade, e sinalizar
+  observações cuja idade exceda 60 minutos. A idade é calculada em relação ao
+  relógio atual em UTC. Para previsão, se a fonte não fornecer horário de
+  atualização, o produto deve dizer que o horário de atualização não foi
+  informado, sem confundir horários de validade previstos com horário de
+  atualização. Uma observação antiga recebida com sucesso pode ser exibida
+  somente com indicação explícita de desatualização. Timestamp ausente ou
+  inválido não pode ser apresentado como recente.
 - **RF-06 — Tratar indisponibilidade e permitir nova tentativa:** diante de
   falha de conexão, erro da API ou timeout na busca de cidades ou consulta
   meteorológica, o produto deve informar que não foi possível concluir a
@@ -75,6 +81,22 @@ Questions.
   atual, deve informar que as condições atuais estão indisponíveis; dados de
   previsão disponíveis podem continuar sendo apresentados. Dias sem previsão
   devem ser identificados como indisponíveis, sem deslocar datas.
+
+### Contrato da fonte de dados
+
+- Usar o serviço oficial de Geocoding do Open-Meteo para localizar cidades e o
+  serviço oficial de Forecast para consultar dados atuais e previsão.
+- Solicitar somente os dados necessários aos requisitos: condição meteorológica,
+  temperatura atual, sensação térmica, máxima/mínima diária, umidade,
+  velocidade do vento e, na previsão, condição e temperaturas diárias/horárias.
+- Solicitar ou converter valores para as unidades exibidas neste documento e
+  usar o fuso local da cidade para as séries diárias e horárias.
+- Não exigir API key para esta versão. Respeitar os limites e termos vigentes
+  aplicáveis ao uso do serviço; não realizar atualização automática em segundo
+  plano. Exibir atribuição visível com link para Open-Meteo.
+- Se a política vigente do provedor não permitir o uso pretendido sem API key,
+  a publicação fica bloqueada até que o acesso permitido seja configurado; não
+  substituir o provedor nem remover a atribuição sem revisão da especificação.
 
 ## User Stories
 
@@ -122,7 +144,9 @@ identifica o requisito funcional que valida.
 - **When:** a pessoa pesquisa "São Paulo" e depois "São"
 - **Then:** a busca exata inclui as duas localidades chamadas "São Paulo"; a
   busca parcial inclui as localidades cujo nome contém "São", sem incluir
-  nomes que não correspondam, e cada resultado identifica cidade e país
+  nomes que não correspondam; no máximo 10 resultados são exibidos na ordem
+  recebida do serviço e cada resultado identifica cidade, país e região/estado
+  quando disponível
 
 #### Cenário: ignorar diferenças de acentuação e capitalização
 
@@ -159,6 +183,13 @@ identifica o requisito funcional que valida.
 - **When:** a pessoa tenta pesquisar
 - **Then:** nenhuma solicitação de geocoding é enviada e a interface solicita
   um nome de cidade, mantendo o campo disponível para edição
+
+#### Cenário: enviar busca somente após confirmação
+
+- **Given:** a pessoa está digitando um nome de cidade no campo de busca
+- **When:** ainda não confirmou a consulta por envio do formulário ou ação
+  explícita de busca
+- **Then:** nenhuma solicitação de geocoding é enviada
 
 #### Cenário: remover espaços externos do termo
 
@@ -214,11 +245,12 @@ identifica o requisito funcional que valida.
 
 #### Cenário: consultar detalhes por hora
 
-- **Given:** a previsão diária da cidade está visível e a resposta controlada
-  contém detalhes horários com hora local, condição e temperatura
-- **When:** a pessoa solicita os detalhes por hora
+- **Given:** os cinco resumos diários estão visíveis e a resposta controlada
+  contém pontos horários para um dos dias
+- **When:** a pessoa solicita os detalhes por hora daquele dia
 - **Then:** a interface apresenta para cada registro horário o horário local,
-  a condição em português e a temperatura da previsão daquela cidade
+  a condição em português e a temperatura da previsão daquela cidade, somente
+  para a data local selecionada; os outros dias permanecem inalterados
 
 #### Cenário: apresentar datas e horários no fuso da cidade
 
@@ -281,11 +313,12 @@ identifica o requisito funcional que valida.
 
 #### Cenário: exibir horário da última atualização
 
-- **Given:** a resposta controlada inclui um horário conhecido de atualização
+- **Given:** a resposta controlada inclui um timestamp conhecido da observação
+  atual
 - **When:** os dados meteorológicos são apresentados para uma cidade cujo fuso
   difere do UTC
-- **Then:** a interface exibe o mesmo instante de atualização convertido para
-  o fuso local da cidade
+- **Then:** a interface exibe o mesmo instante da observação convertido para o
+  fuso local da cidade
 
 #### Cenário: sinalizar dados com mais de uma hora
 
@@ -313,11 +346,19 @@ identifica o requisito funcional que valida.
 
 #### Cenário: não declarar dados recentes sem timestamp válido
 
-- **Given:** a resposta não contém timestamp válido ou o timestamp está no
-  futuro em relação ao relógio de referência
+- **Given:** a observação atual não contém timestamp válido ou o timestamp está
+  no futuro em relação ao relógio de referência
 - **When:** a interface apresenta dados meteorológicos
 - **Then:** a interface identifica a atualização como indisponível e não
   declara os dados recentes
+
+#### Cenário: não confundir horário da previsão com atualização
+
+- **Given:** a fonte fornece horários de validade previstos, mas não fornece
+  timestamp de atualização da previsão
+- **When:** a interface apresenta os dados previstos
+- **Then:** a interface informa que o horário de atualização não foi informado
+  e não usa o horário de validade como timestamp de atualização
 
 ### AC-RF-06 — Tratar indisponibilidade e permitir nova tentativa
 
@@ -466,38 +507,109 @@ identifica o requisito funcional que valida.
 - **Then:** a consulta é tratada como falha, os dados inválidos não são exibidos
   e a pessoa recebe uma mensagem de erro com opção de nova tentativa
 
+### Critérios de aceite de qualidade e lançamento
+
+#### Cenário: limitar resultados da busca
+
+- **Given:** o provedor retorna mais de 10 cidades correspondentes
+- **When:** a busca termina
+- **Then:** são exibidos no máximo 10 resultados na ordem recebida e não há
+  controle de paginação ou carregamento adicional
+
+#### Cenário: exibir atribuição do provedor
+
+- **Given:** dados meteorológicos atuais ou previstos estão visíveis
+- **When:** a interface é renderizada
+- **Then:** existe uma atribuição visível ao Open-Meteo com link navegável para
+  o provedor
+
+#### Cenário: concluir fluxos nos viewports suportados
+
+- **Given:** a aplicação é aberta em cada viewport de 320, 375, 768, 1024 e
+  1440 px, nos navegadores e versões definidos em RNF-01
+- **When:** a pessoa conclui busca, seleção, consulta, troca de unidade e
+  abertura dos detalhes horários
+- **Then:** cada fluxo pode ser concluído sem rolagem horizontal
+
+#### Cenário: cumprir orçamento de desempenho
+
+- **Given:** há 100 medições bem-sucedidas de geocoding e 100 de consulta
+  meteorológica em rede controlada conforme RNF-03
+- **When:** é calculado o percentil 95 do tempo entre ação e resultado visível
+- **Then:** o p95 de cada tipo de operação é menor ou igual a 3 segundos
+
+#### Cenário: medir disponibilidade da aplicação
+
+- **Given:** um mês completo de verificações externas executadas uma vez por
+  minuto
+- **When:** a disponibilidade mensal da interface é calculada como verificações
+  bem-sucedidas dividido pelo total de verificações
+- **Then:** o resultado é igual ou superior a 99,5%; falhas do provedor de
+  meteorologia são contabilizadas separadamente
+
+#### Cenário: verificar fluxo principal com usuários
+
+- **Given:** 10 participantes do público geral recebem as mesmas instruções de
+  tarefa, sem treinamento de uso
+- **When:** cada pessoa tenta pesquisar uma cidade, consultar as condições
+  atuais e identificar as cinco datas da previsão
+- **Then:** pelo menos 9 participantes concluem as três tarefas sem ajuda
+
+#### Cenário: verificar privacidade sem telemetria
+
+- **Given:** a aplicação é carregada e a pessoa realiza buscas e consultas
+- **When:** as requisições de rede, cookies e armazenamento local são
+  inspecionados
+- **Then:** as chamadas funcionais são limitadas ao provedor meteorológico e aos
+  recursos necessários da aplicação, sem chamadas de analytics, identificadores
+  persistentes, cookies não essenciais ou persistência local da cidade/unidade
+
+#### Cenário: bloquear lançamento se os termos do provedor não forem atendidos
+
+- **Given:** o uso sem chave ou a atribuição configurada não atende aos termos
+  vigentes do Open-Meteo para a implantação pretendida
+- **When:** a verificação de prontidão para lançamento é executada
+- **Then:** a implantação é bloqueada até que o acesso e a atribuição estejam
+  em conformidade
+
 ## Non-Functional Requirements
 
-As metas identificadas como propostas são critérios candidatos, não compromissos
-de produção aprovados. As questões de disponibilidade, desempenho, plataformas,
-acessibilidade e usabilidade devem ser resolvidas antes do lançamento.
+As metas e matrizes abaixo são compromissos desta versão da especificação.
 
 - **RNF-01 — Responsividade:** as funcionalidades principais devem ser
   utilizáveis em larguras CSS de 320, 375, 768, 1024 e 1440 px, sem rolagem
   horizontal. Em cada largura, deve ser possível concluir busca, seleção,
-  consulta, alternância de unidade e abertura dos detalhes horários.
-- **RNF-02 — Usabilidade (proposta):** em teste moderado com participantes do
-  público geral, pelo menos 90% devem completar sem ajuda a busca de uma cidade,
-  a consulta atual e a leitura da previsão de cinco dias. O tamanho da amostra e
-  o protocolo devem ser aprovados antes do teste.
-- **RNF-03 — Desempenho (proposta):** no perfil de rede e disponibilidade do
-  provedor a ser aprovado, pelo menos 95% de cada tipo de operação bem-sucedida
-  (geocoding e consulta meteorológica) deve apresentar resultado em até 3
-  segundos, medidos da ação da pessoa até o conteúdo correspondente ficar
-  visível. O timeout de 10 segundos é o limite máximo para encerrar cada
-  operação, não a meta de desempenho.
-- **RNF-04 — Disponibilidade e resiliência (proposta):** a meta inicial é
-  disponibilidade mensal de 99,5%. A disponibilidade da aplicação e a
-  disponibilidade de dados meteorológicos devem ser medidas separadamente.
-  Falhas devem ser identificadas como falhas, permitir nova tentativa manual e
-  não apresentar cache como dado atual.
+  consulta, alternância de unidade e abertura dos detalhes horários. São
+  suportadas a versão estável atual e a versão principal anterior de Chrome,
+  Edge, Firefox e Safari em desktop, além da versão estável atual de Safari em
+  iOS e Chrome em Android.
+- **RNF-02 — Usabilidade:** em teste moderado com 10 participantes do público
+  geral, pelo menos 9 devem, sem ajuda, buscar uma cidade, consultar condições
+  atuais e identificar corretamente as cinco datas da previsão. Este é o
+  indicador inicial de sucesso do produto; não será coletado por telemetria.
+  O teste usa cenários e cidades definidos antes da sessão, sem treinamento.
+- **RNF-03 — Desempenho:** quando o provedor responde e a conexão do cliente está
+  disponível, pelo menos 95% de cada tipo de operação bem-sucedida (geocoding e
+  meteorologia) devem apresentar resultado em até 3 segundos, medidos da ação
+  da pessoa até o conteúdo correspondente ficar visível, em rede controlada de
+  10 Mbps de download, 2 Mbps de upload e 100 ms de latência de ida e volta
+  para o provedor. O timeout de 10 segundos é o limite máximo para encerrar
+  cada operação, não a meta de desempenho. Resultados de falha/timeout são
+  reportados separadamente.
+- **RNF-04 — Disponibilidade e resiliência:** a aplicação deve alcançar
+  disponibilidade mensal de 99,5%, medida por verificações externas a cada
+  minuto da capacidade de carregar a interface. A disponibilidade do provedor
+  meteorológico é reportada separadamente e não é contabilizada como
+  indisponibilidade da interface. Falhas devem ser identificadas como falhas,
+  permitir nova tentativa manual e não apresentar cache como dado atual.
 - **RNF-05 — Acessibilidade:** a interface deve atender WCAG 2.2 nível AA.
   Os fluxos de busca, seleção, consulta, alternância de unidade e nova tentativa
   devem ser concluíveis somente por teclado, sem armadilha de foco e com foco
   visível; controles devem ter nomes acessíveis e estados de carregamento, vazio
   e erro devem ser anunciados por tecnologia assistiva. Contraste e demais
   critérios AA devem ser verificados por avaliação automatizada e revisão
-  manual.
+  manual. A validação manual cobre NVDA com Firefox em Windows e VoiceOver com
+  Safari em iOS.
 - **RNF-06 — Atualidade dos dados:** a indicação e o limite de 60 minutos
   seguem RF-05. Timestamp ausente, inválido ou no futuro não deve resultar em
   indicação de dado recente; deve ser comunicado como horário indisponível.
@@ -507,10 +619,17 @@ acessibilidade e usabilidade devem ser resolvidas antes do lançamento.
   da cidade. Valores de temperatura mostram °C ou °F, umidade mostra %, e vento
   mostra km/h.
 - **RNF-08 — Privacidade:** nenhuma conta ou dado de usuário deve ser persistido
-  no servidor. A localização consultada é enviada ao provedor para busca ou
-  previsão; retenção pelo provedor, telemetria e armazenamento local estão
-  sujeitos às decisões pendentes em Open Questions e não devem ser ativados
-  antes da aprovação de privacidade.
+  no servidor. A localização consultada é enviada ao Open-Meteo para busca ou
+  previsão. Não são usados analytics, identificadores de usuário, cookies não
+  essenciais ou armazenamento local nesta versão. A política de privacidade
+  deve informar o compartilhamento da consulta com o provedor e a retenção
+  conforme os termos publicados por ele. A aplicação não coleta nem armazena
+  endereço IP para fins próprios; metadados de rede necessários à conexão
+  podem ser processados pelo provedor conforme seus termos.
+- **RNF-09 — Atribuição da fonte:** quando dados meteorológicos forem exibidos,
+  a interface deve exibir uma atribuição visível ao Open-Meteo com link para o
+  provedor. A atribuição deve estar presente tanto na visão atual quanto na
+  previsão.
 
 ## Edge Cases
 
@@ -541,8 +660,11 @@ acessibilidade e usabilidade devem ser resolvidas antes do lançamento.
 - A busca tem cobertura mundial e a pessoa usuária escolhe uma cidade; não foi
   solicitada localização automática.
 - A fonte de dados meteorológicos é o Open-Meteo, sem API key.
+- São usados somente os serviços oficiais de Geocoding e Forecast do
+  Open-Meteo, nos limites e termos vigentes para uso sem chave; a publicação
+  depende de confirmação de conformidade e atribuição visível.
 - A previsão de cinco dias inclui hoje e os quatro dias seguintes.
-- A previsão diária pode ser expandida para detalhes por hora sob demanda.
+- Cada dia da previsão pode ser expandido para ver seus pontos horários locais.
 - Datas e horários usam o fuso local da cidade consultada.
 - Celsius é a unidade inicial. A unidade escolhida vale somente durante a
   visita e não é persistida; recarregar a página ou iniciar outra visita
@@ -558,12 +680,12 @@ acessibilidade e usabilidade devem ser resolvidas antes do lançamento.
   em porcentagem e velocidade do vento em km/h.
 - Consultas de busca e meteorológicas sem resposta expiram após 10 segundos.
 - Não há autenticação nem persistência de dados de usuário no servidor.
-- Ausência de cadastro e persistência de servidor não define se haverá
-  armazenamento local no navegador, telemetria ou retenção de registros pelo
-  provedor; esses pontos precisam de validação de privacidade.
-- As metas de sucesso de usabilidade, latência e disponibilidade são propostas
-  até aprovação explícita; o timeout de 10 segundos e o limite de atualização
-  de 60 minutos são decisões adotadas nesta especificação.
+- A aplicação não usa analytics, identificadores, cookies não essenciais ou
+  persistência local; os pedidos de cidade e os metadados de rede necessários
+  são enviados ao provedor.
+- As metas de usabilidade, latência e disponibilidade e as matrizes de
+  navegadores/acessibilidade estão definidas como critérios de lançamento nesta
+  especificação.
 
 ## Risks
 
@@ -574,9 +696,9 @@ acessibilidade e usabilidade devem ser resolvidas antes do lançamento.
 | Cidades homônimas ou variações de grafia podem levar à localidade errada. | A previsão pode não corresponder ao destino pesquisado. | Identificar resultados com cidade, região/estado quando disponível e país; validar buscas ambíguas e variações de acento. |
 | Diferenças no tratamento do fuso horário podem deslocar datas e horários. | A previsão pode divergir da expectativa local e gerar retrabalho em critérios e experiência. | Usar o fuso local da cidade como referência e validar localidades em fusos diferentes, inclusive perto da mudança de dia. |
 | Conversão ou arredondamento inconsistente entre componentes. | Valores podem divergir e reduzir a confiança da pessoa usuária. | Testar valores conhecidos em ambas as unidades e verificar todos os campos atuais, diários e horários. |
-| Falta de métricas de sucesso de negócio aprovadas. | O time pode não conseguir avaliar se o produto atende à necessidade ou priorizar melhorias. | Definir métrica de sucesso e validar cenários prioritários com stakeholders e usuários. |
-| Metas operacionais, cobertura de plataformas e acessibilidade indefinidas. | A qualidade e a compatibilidade podem ser avaliadas com critérios inconsistentes. | Confirmar metas, matriz de suporte e tecnologias assistivas antes de fechar os critérios de qualidade. |
-| Consultas de cidade ou eventual telemetria podem ser registradas sem regras claras. | Coleta desnecessária, perda de confiança e obrigações de conformidade. | Mapear os dados enviados ao provedor e qualquer telemetria, retenção e consentimento; validar requisitos de privacidade antes do lançamento. |
+| A amostra de usabilidade pode não representar todas as pessoas do público geral. | A métrica inicial pode não revelar barreiras para grupos menos representados. | Tratar o resultado 9/10 como linha de base; recrutar participantes diversos e repetir o teste após mudanças relevantes. |
+| O contrato ou as condições do Open-Meteo podem mudar. | Chamadas podem exceder limites ou deixar de cumprir condições de uso e atribuição. | Revisar limites, termos e atribuição antes do lançamento e periodicamente; bloquear publicação se o uso sem chave deixar de ser autorizado. |
+| Consultas de cidade são compartilhadas com o provedor. | A pessoa pode não esperar que o destino pesquisado seja enviado a um terceiro. | Informar esse compartilhamento na política de privacidade e limitar as chamadas aos serviços funcionais do provedor. |
 
 ## Out of Scope
 
@@ -592,20 +714,36 @@ acessibilidade e usabilidade devem ser resolvidas antes do lançamento.
 - Fontes meteorológicas alternativas ou fallback com dados antigos.
 - Preferências de unidade persistidas após recarregar a página ou iniciar nova
   visita.
+- Paginação, carregamento adicional ou busca por resultados além dos 10
+  primeiros retornados pelo provedor.
+- Atualização automática periódica, atualização em segundo plano ou cache de
+  dados meteorológicos para exibição após falhas.
+- Previsões para além de hoje e dos quatro dias seguintes, histórico
+  meteorológico ou projeções sazonais.
+- Detalhes horários fora da data local escolhida, incluindo navegação por horas
+  em dias diferentes.
+- Conversão de unidades de vento, pressão ou distância; velocidade do vento é
+  apresentada somente em km/h.
+- Compartilhamento, exportação, impressão ou uso offline de consultas e
+  previsões.
+- Escolha manual de país/região como filtro independente de busca.
+- Métricas pós-lançamento coletadas por analytics ou telemetria.
 
 ## Open Questions
 
-Os itens marcados como bloqueadores precisam ser aprovados antes do lançamento;
-as metas candidatas não constituem SLA ou aceite contratual até essa aprovação.
+Não há questões de produto abertas para iniciar o desenvolvimento do escopo
+descrito. As decisões de integração e qualidade abaixo são critérios de
+lançamento, não escolhas pendentes:
 
-| Prioridade | Pergunta | Necessária antes do lançamento |
-|---|---|---|
-| Crítica | Quais endpoints, campos e timestamps do Open-Meteo serão usados? A cobertura, unidades de origem, limites, licença e atribuição atendem ao produto? | Sim |
-| Alta | As metas candidatas de p95 ≤ 3 s e disponibilidade mensal de 99,5% são aprovadas? Qual perfil de rede, janela e fronteira de medição serão usados para separar disponibilidade da aplicação e dos dados? | Sim |
-| Alta | Quais navegadores e versões serão suportados? O intervalo de 320 a 1440 px é suficiente para os dispositivos-alvo? | Sim |
-| Alta | WCAG 2.2 AA é o requisito de lançamento? Quais combinações de leitor de tela, navegador e sistema operacional compõem a matriz de validação? | Sim |
-| Alta | Haverá telemetria ou armazenamento local? Quais dados o provedor retém, por quanto tempo e sob quais condições de transparência/consentimento? | Sim |
-| Média | Qual limite de resultados a busca deve exibir por consulta e como a pessoa acessará outros resultados, se houver mais? | Sim, se o provedor puder retornar resultados além do limite visível |
-| Alta | Qual período futuro os detalhes por hora devem cobrir (por exemplo, o dia selecionado ou toda a janela de previsão)? | Sim |
-| Média | Qual métrica de negócio avaliará sucesso após o lançamento (consultas concluídas, retorno ou satisfação) e qual será sua meta? | Não, mas antes de avaliar o resultado do produto |
-| Média | Qual amostra e protocolo serão usados para validar a meta candidata de 90% de conclusão sem ajuda? | Sim, antes de usar a meta como aceite |
+| Tema | Decisão |
+|---|---|
+| Fonte e integração | Usar os serviços oficiais Geocoding e Forecast do Open-Meteo sem API key nesta versão, solicitando somente os campos funcionais definidos. Fazer buscas somente após confirmação da pessoa e sem atualização automática. Respeitar limites e termos vigentes; verificar conformidade antes da publicação. Se o uso sem chave não for permitido, bloquear a publicação até configurar acesso permitido. |
+| Cobertura e atribuição | A busca cobre o catálogo mundial disponibilizado pelo provedor, sem prometer localidades ausentes do catálogo. Exibir atribuição visível com link ao Open-Meteo em condições atuais e previsão. |
+| Limite de resultados | Exibir no máximo 10 resultados na ordem do provedor, sem paginação. |
+| Detalhes horários | Disponibilizar os pontos horários do dia local selecionado em qualquer um dos cinco dias exibidos. |
+| Desempenho | Aplicar p95 ≤ 3 s por tipo de operação bem-sucedida sob rede de 10/2 Mbps e 100 ms RTT; encerrar após 10 s. Validar com 100 medições de cada operação. |
+| Disponibilidade | Aplicação: meta de 99,5% mensal medida por verificação externa por minuto; disponibilidade do provedor reportada separadamente. |
+| Plataformas | Duas versões estáveis mais recentes de Chrome, Edge, Firefox e Safari em desktop; versões estáveis atuais de Safari em iOS e Chrome em Android; viewports 320, 375, 768, 1024 e 1440 px. |
+| Acessibilidade | WCAG 2.2 AA, com avaliação automatizada/manual e matriz NVDA/Firefox/Windows e VoiceOver/Safari/iOS. |
+| Privacidade | Sem contas, analytics, identificadores, cookies não essenciais ou persistência local. Informar que a consulta é enviada ao Open-Meteo e divulgar retenção conforme os termos do provedor. |
+| Métrica de sucesso e validação | Em teste moderado com 10 pessoas do público geral, ao menos 9 completam sem ajuda busca, consulta atual e identificação das cinco datas. Não coletar essa métrica por telemetria. |
