@@ -33,12 +33,15 @@ Questions.
   ajudar a distinguir localidades homônimas. A pessoa deve poder selecionar um
   resultado para consultar seu clima.
 - **RF-02 — Consultar condições atuais:** para a cidade selecionada, o produto
-  deve apresentar a condição do tempo, temperatura atual, sensação térmica,
-  máxima e mínima, umidade e vento.
+  deve apresentar em português a condição do tempo, temperatura atual, sensação
+  térmica, máxima e mínima do dia local, umidade em porcentagem e velocidade do
+  vento em km/h.
 - **RF-03 — Consultar previsão diária e horária:** para a cidade selecionada,
-  o produto deve apresentar o resumo diário de hoje e dos quatro dias seguintes.
-  Deve ser possível consultar detalhes por hora sob demanda. Datas e horários
-  devem corresponder ao fuso horário local da cidade.
+  o produto deve apresentar para hoje e os quatro dias seguintes um resumo com
+  condição do tempo e temperaturas máxima e mínima. Deve ser possível consultar
+  sob demanda detalhes por hora, incluindo horário local, condição do tempo e
+  temperatura. As descrições devem ser apresentadas em português; datas e
+  horários devem corresponder ao fuso horário local da cidade.
 - **RF-04 — Alternar unidade de temperatura:** a pessoa usuária deve poder
   alternar entre Celsius e Fahrenheit. Celsius é a unidade inicial. A seleção
   vale até o recarregamento da página ou o início de uma nova visita, não sendo
@@ -46,16 +49,28 @@ Questions.
   atual, da previsão diária e dos detalhes horários, com arredondamento para o
   grau inteiro mais próximo.
 - **RF-05 — Informar atualização dos dados:** o produto deve informar o horário
-  da última atualização dos dados meteorológicos e sinalizar os dados com mais
-  de uma hora como desatualizados.
+  de atualização fornecido pela fonte de dados, exibido no fuso local da cidade,
+  e sinalizar dados cuja idade exceda 60 minutos. Uma resposta bem-sucedida com
+  dados antigos pode ser exibida somente com indicação explícita de
+  desatualização.
 - **RF-06 — Tratar indisponibilidade e permitir nova tentativa:** diante de
-  falha de conexão ou indisponibilidade do Open-Meteo, o produto deve informar
-  que não foi possível obter os dados e oferecer uma nova tentativa manual.
-  Não deve apresentar dados antigos como se fossem atuais.
+  falha de conexão, erro da API ou timeout na busca de cidades ou consulta
+  meteorológica, o produto deve informar que não foi possível concluir a
+  operação e oferecer nova tentativa manual. O timeout ocorre após 10 segundos
+  sem resposta. Após uma falha, o produto não deve usar dados em cache como se
+  fossem atuais.
 - **RF-07 — Comunicar estados de consulta:** enquanto uma busca de cidade ou
   consulta meteorológica estiver em andamento, o produto deve indicar que está
-  carregando. Quando a busca terminar sem resultados, deve informar que nenhuma
-  cidade foi encontrada e permitir que a pessoa ajuste a consulta.
+  carregando e remover o indicador ao terminar com sucesso, resultado vazio ou
+  falha. Quando a busca terminar sem resultados, deve informar que nenhuma
+  cidade foi encontrada e permitir que a pessoa ajuste a consulta. Uma busca
+  vazia ou composta apenas por espaços não deve ser enviada ao serviço.
+- **RF-08 — Apresentar respostas meteorológicas parciais:** o produto deve
+  apresentar cada campo meteorológico recebido e indicar individualmente os
+  campos ausentes como indisponíveis, sem inventar valores. Sem temperatura
+  atual, deve informar que as condições atuais estão indisponíveis; dados de
+  previsão disponíveis podem continuar sendo apresentados. Dias sem previsão
+  devem ser identificados como indisponíveis, sem deslocar datas.
 
 ## User Stories
 
@@ -84,6 +99,9 @@ Questions.
   antes de sair, quero saber quando a busca ou a consulta está carregando e
   quando não há cidades encontradas para entender o resultado e decidir o que
   fazer em seguida.
+- **US-09 (RF-08) — Interpretar dados incompletos:** Como pessoa que planeja
+  atividades, quero identificar quais informações meteorológicas estão
+  disponíveis ou ausentes para planejar sem confundir lacunas com valores reais.
 
 ## Acceptance Criteria
 
@@ -123,33 +141,66 @@ identifica o requisito funcional que valida.
 - **Then:** o produto exibe os dados associados à localidade selecionada, não
   os dados da outra localidade
 
+#### Cenário: impedir busca vazia
+
+- **Given:** o campo de busca está vazio ou contém apenas espaços
+- **When:** a pessoa tenta pesquisar
+- **Then:** nenhuma solicitação de geocoding é enviada e a interface solicita
+  um nome de cidade, mantendo o campo disponível para edição
+
+#### Cenário: pesquisar nomes com pontuação legítima
+
+- **Given:** o catálogo controlado contém uma localidade cujo nome inclui
+  apóstrofo ou hífen
+- **When:** a pessoa pesquisa esse nome com a pontuação
+- **Then:** a consulta é tratada como texto literal e retorna a localidade
+  correspondente
+
+#### Cenário: rejeitar caracteres de controle
+
+- **Given:** o texto de busca contém um caractere de controle
+- **When:** a pessoa tenta pesquisar
+- **Then:** a busca não é enviada e a interface informa que o texto não é válido
+
+#### Cenário: informar que a cidade não existe
+
+- **Given:** o serviço de geocoding responde com sucesso e zero resultados para
+  uma consulta não vazia
+- **When:** a busca termina
+- **Then:** a interface informa que nenhuma cidade foi encontrada, não inicia
+  uma consulta meteorológica e permite editar e reenviar a busca
+
 ### AC-RF-02 — Consultar condições atuais
 
 #### Cenário: exibir todos os indicadores atuais disponíveis
 
 - **Given:** a pessoa selecionou uma cidade e a resposta controlada contém
-  condição, temperatura atual, sensação térmica, máxima, mínima, umidade e vento
+  condição, temperatura atual, sensação térmica, máxima e mínima do dia local,
+  umidade e velocidade do vento
 - **When:** a consulta meteorológica termina com sucesso
-- **Then:** a interface exibe cada um desses sete indicadores com os valores
-  correspondentes à resposta da cidade selecionada
+- **Then:** a interface exibe os sete indicadores com os valores da resposta,
+  máximas e mínimas referentes ao dia local, descrição da condição em
+  português, umidade em porcentagem e velocidade do vento em km/h
 
 ### AC-RF-03 — Consultar previsão diária e horária
 
 #### Cenário: exibir os cinco dias da previsão
 
 - **Given:** a pessoa selecionou uma cidade e a resposta controlada contém a
-  previsão diária de hoje e dos quatro dias seguintes no fuso local da cidade
+  previsão diária de hoje e dos quatro dias seguintes, com condição, máxima e
+  mínima para cada dia no fuso local da cidade
 - **When:** a consulta meteorológica termina com sucesso
 - **Then:** a interface exibe exatamente cinco resumos diários, identificados
-  pelas datas locais de hoje até o quarto dia seguinte
+  pelas datas locais de hoje até o quarto dia seguinte, cada um com a condição
+  em português e temperaturas máxima e mínima
 
 #### Cenário: consultar detalhes por hora
 
 - **Given:** a previsão diária da cidade está visível e a resposta controlada
-  contém detalhes horários
+  contém detalhes horários com hora local, condição e temperatura
 - **When:** a pessoa solicita os detalhes por hora
-- **Then:** a interface apresenta os horários e os dados horários da previsão
-  daquela cidade
+- **Then:** a interface apresenta para cada registro horário o horário local,
+  a condição em português e a temperatura da previsão daquela cidade
 
 #### Cenário: apresentar datas e horários no fuso da cidade
 
@@ -186,10 +237,11 @@ identifica o requisito funcional que valida.
 #### Cenário: converter e arredondar temperaturas
 
 - **Given:** a resposta controlada contém temperaturas em Celsius conhecidas,
-  incluindo valores cuja conversão resulta em fração
+  incluindo valores cuja conversão resulta em fração e empates de 0,5
 - **When:** a pessoa alterna entre Celsius e Fahrenheit
 - **Then:** cada temperatura corresponde à conversão da resposta original
-  para a unidade selecionada, arredondada para o grau inteiro mais próximo
+  para a unidade selecionada, arredondada para o grau inteiro mais próximo, com
+  empates de 0,5 arredondados para longe de zero
 
 #### Cenário: restaurar Celsius ao recarregar ou iniciar nova visita
 
@@ -202,33 +254,59 @@ identifica o requisito funcional que valida.
 #### Cenário: exibir horário da última atualização
 
 - **Given:** a resposta controlada inclui um horário conhecido de atualização
-- **When:** os dados meteorológicos são apresentados
-- **Then:** a interface exibe esse horário de atualização
+- **When:** os dados meteorológicos são apresentados para uma cidade cujo fuso
+  difere do UTC
+- **Then:** a interface exibe o mesmo instante de atualização convertido para
+  o fuso local da cidade
 
 #### Cenário: sinalizar dados com mais de uma hora
 
 - **Given:** o relógio de teste está fixado e os dados têm idade superior a
-  uma hora
+  60 minutos, calculada a partir do horário fornecido pela fonte
 - **When:** os dados meteorológicos são apresentados
 - **Then:** a interface exibe a indicação de dados desatualizados
 
 #### Cenário: não sinalizar dados com até uma hora
 
 - **Given:** o relógio de teste está fixado e os dados têm idade igual ou
-  inferior a uma hora
+  inferior ou igual a 60 minutos, calculada a partir do horário fornecido pela
+  fonte
 - **When:** os dados meteorológicos são apresentados
 - **Then:** a interface não exibe a indicação de dados desatualizados com base
   no limite de uma hora
 
+#### Cenário: exibir dados antigos recebidos com sucesso com aviso
+
+- **Given:** a fonte responde com sucesso e o timestamp dos dados indica idade
+  superior a uma hora
+- **When:** a interface apresenta esses dados
+- **Then:** os dados são exibidos com o horário da última atualização e a
+  indicação explícita de que estão desatualizados
+
 ### AC-RF-06 — Tratar indisponibilidade e permitir nova tentativa
 
-#### Cenário: informar falha inicial de conexão ou provedor
+#### Cenário: informar falha de geocoding ou consulta meteorológica
 
-- **Given:** a pessoa solicitou dados meteorológicos e a conexão falha ou a
-  fonte responde com falha
-- **When:** a consulta termina sem dados atuais
-- **Then:** a interface informa que não foi possível obter os dados, oferece
-  uma ação de nova tentativa e não apresenta dados antigos como atuais
+- **Given:** a pessoa iniciou uma busca ou consulta meteorológica e a conexão
+  falha ou o serviço responde com erro
+- **When:** a operação termina sem resposta bem-sucedida
+- **Then:** a interface informa que a operação falhou, oferece nova tentativa
+  manual e não apresenta a falha como uma busca sem resultados; após falha
+  meteorológica, não apresenta dados em cache como atuais
+
+#### Cenário: encerrar a busca após timeout
+
+- **Given:** uma busca de cidades permanece sem resposta
+- **When:** decorrem 10 segundos desde o envio da solicitação
+- **Then:** a busca é encerrada, a interface informa que a consulta demorou
+  demais e oferece nova tentativa
+
+#### Cenário: encerrar a consulta meteorológica após timeout
+
+- **Given:** uma consulta meteorológica permanece sem resposta
+- **When:** decorrem 10 segundos desde o envio da solicitação
+- **Then:** a consulta é encerrada, a interface informa que a consulta demorou
+  demais, oferece nova tentativa e não apresenta dados em cache como atuais
 
 #### Cenário: nova tentativa concluída com sucesso
 
@@ -237,6 +315,14 @@ identifica o requisito funcional que valida.
 - **When:** a pessoa aciona a nova tentativa
 - **Then:** uma nova consulta é realizada e os dados recebidos com sucesso são
   apresentados para a cidade selecionada
+
+#### Cenário: repetir busca de cidades após falha
+
+- **Given:** uma busca de cidades falhou e a fonte está configurada para
+  responder com sucesso à próxima solicitação
+- **When:** a pessoa aciona a nova tentativa
+- **Then:** a busca é enviada novamente e os resultados recebidos são
+  apresentados
 
 #### Cenário: nova tentativa também falha
 
@@ -277,66 +363,65 @@ identifica o requisito funcional que valida.
 - **Then:** a interface informa que não foram encontradas cidades e não
   apresenta o estado de erro de conexão nem resultados meteorológicos
 
-### AC-RF-02 — Consultar condições atuais
+#### Cenário: remover o carregamento após cada resultado
 
-- Após selecionar uma cidade com dados disponíveis, são exibidos condição do
-  tempo, temperatura atual, sensação térmica, máxima, mínima, umidade e vento.
-- Os valores e a condição exibidos correspondem à localidade selecionada e à
-  resposta meteorológica disponível para ela.
+- **Given:** uma busca ou consulta meteorológica apresenta estado de
+  carregamento
+- **When:** a operação termina com sucesso, resultado vazio, erro ou timeout
+- **Then:** o estado de carregamento deixa de ser apresentado e a interface
+  apresenta o resultado ou estado correspondente ao desfecho
 
-### AC-RF-03 — Consultar previsão diária e horária
+### AC-RF-08 — Apresentar respostas meteorológicas parciais
 
-- Após selecionar uma cidade com dados disponíveis, são exibidos cinco
-  resumos diários: hoje e cada um dos quatro dias seguintes.
-- A pessoa usuária pode solicitar detalhes por hora para a previsão.
-- As datas e horas apresentadas correspondem ao fuso local da cidade, inclusive
-  quando ele difere do fuso do dispositivo da pessoa usuária.
-- O produto não rotula como hoje uma data que, no fuso local da cidade, seja
-  outro dia.
+#### Cenário: apresentar campos atuais disponíveis e marcar os ausentes
 
-### AC-RF-04 — Alternar unidade de temperatura
+- **Given:** a resposta meteorológica contém temperatura atual e alguns, mas
+  não todos, os demais campos atuais
+- **When:** a consulta termina com sucesso
+- **Then:** os campos recebidos são apresentados e cada campo ausente é
+  identificado como indisponível, sem valor inventado
 
-- Em uma nova visita, a unidade inicialmente apresentada é Celsius.
-- Ao alternar para Fahrenheit, todos os valores de temperatura visíveis no
-  clima atual, no resumo diário e nos detalhes horários passam a usar
-  Fahrenheit; nenhum componente permanece em Celsius.
-- Ao alternar para Celsius, os mesmos valores passam a usar Celsius.
-- Para um conjunto de valores de referência conhecido, as temperaturas
-  exibidas correspondem à conversão da unidade escolhida e são arredondadas
-  para o grau inteiro mais próximo.
-- Após recarregar a página ou iniciar uma nova visita, a unidade volta a
-  Celsius.
+#### Cenário: indicar indisponibilidade das condições atuais sem temperatura
 
-### AC-RF-05 — Informar atualização dos dados
+- **Given:** a resposta meteorológica não contém temperatura atual, mas pode
+  conter previsão diária ou horária
+- **When:** a consulta termina com sucesso
+- **Then:** as condições atuais são identificadas como indisponíveis e qualquer
+  previsão recebida continua sendo apresentada
 
-- Quando os dados meteorológicos forem apresentados, a interface informa o
-  horário da última atualização disponibilizado para esses dados.
-- Quando a idade dos dados exceder uma hora, a interface exibe uma indicação
-  visível de que estão desatualizados.
-- Dados com idade de uma hora ou menos não recebem a indicação de
-  desatualizados por esse limite.
+#### Cenário: preservar as datas quando faltam dias da previsão
 
-### AC-RF-06 — Tratar indisponibilidade e permitir nova tentativa
+- **Given:** a resposta meteorológica não contém dados para um ou mais dos cinco
+  dias previstos
+- **When:** a previsão é apresentada
+- **Then:** os dias disponíveis aparecem em suas datas locais corretas e cada dia
+  ausente é identificado como indisponível, sem deslocar ou substituir datas
 
-- Quando a conexão falhar ou a fonte de dados não responder com sucesso, a
-  interface informa que não foi possível obter ou atualizar os dados e oferece
-  uma ação de nova tentativa.
-- Acionar a nova tentativa inicia uma nova consulta e, se houver sucesso,
-  apresenta os dados recebidos.
-- Se a tentativa falhar novamente, a interface mantém uma mensagem de erro e
-  continua oferecendo a possibilidade de tentar novamente.
-- Dados antigos não são identificados nem apresentados como condições atuais.
+#### Cenário: informar ausência total de dados utilizáveis
 
-### AC-RF-07 — Comunicar estados de consulta
+- **Given:** a resposta meteorológica não contém temperatura atual nem dados de
+  previsão utilizáveis
+- **When:** a consulta termina
+- **Then:** a interface informa que não há dados meteorológicos disponíveis e
+  oferece nova tentativa
 
-- Durante uma busca de cidade, a interface apresenta um estado de carregamento
-  até a busca terminar.
-- Durante a obtenção dos dados meteorológicos, a interface apresenta um estado
-  de carregamento até a consulta terminar.
-- Quando uma busca válida terminar sem resultados, a interface informa que
-  nenhuma cidade foi encontrada e permite iniciar uma busca ajustada.
-- Um resultado vazio não é apresentado como erro de conexão nem como resultado
-  meteorológico.
+## Decisões esclarecidas — perguntas e respostas
+
+- **Pergunta:** O que fazer com dados recebidos com mais de uma hora?
+  **Resposta:** Exibi-los com o horário de atualização e um aviso explícito de
+  desatualização. Não usar dados em cache após falha de API ou conexão.
+- **Pergunta:** Como tratar respostas meteorológicas parciais?
+  **Resposta:** Exibir cada campo recebido e marcar ausentes como
+  indisponíveis. Sem temperatura atual, indicar condições atuais indisponíveis,
+  mas preservar qualquer previsão utilizável.
+- **Pergunta:** A que período se referem máxima e mínima, e qual unidade usar
+  para umidade e vento?
+  **Resposta:** Máxima e mínima são do dia local; umidade é percentual e
+  velocidade do vento é apresentada em km/h.
+- **Pergunta:** Qual o limite para timeout e como tratar empates no
+  arredondamento de temperatura?
+  **Resposta:** Encerrar consultas sem resposta após 10 segundos; arredondar
+  empates de 0,5 grau para longe de zero.
 
 ## Non-Functional Requirements
 
@@ -374,9 +459,9 @@ aprovados até que as questões correspondentes sejam respondidas.
   solicita um nome de cidade e mantém o campo disponível para edição.
 - **Caracteres especiais:** a aplicação aceita pontuação válida em nomes de
   localidades (por exemplo, hífen ou apóstrofo) e pesquisa o texto como dado
-  literal, sem executar ou interpretar caracteres como comandos. Caracteres de
-  controle são removidos ou rejeitados antes da consulta; a aplicação informa
-  quando não resta texto pesquisável.
+  literal, sem executar ou interpretar caracteres como comandos. Se o texto
+  contiver caracteres de controle, a aplicação rejeita a busca e informa que o
+  texto não é válido.
 - **Geocoding sem resultados:** quando o serviço de busca responde com sucesso,
   mas retorna zero localidades, a aplicação informa que nenhuma cidade foi
   encontrada, não apresenta isso como falha de conexão e permite ajustar a
@@ -386,10 +471,9 @@ aprovados até que as questões correspondentes sejam respondidas.
   tentativa manual e não apresenta a falha como uma busca sem resultados. Para
   falha meteorológica, não apresenta dados antigos como atuais.
 - **Timeout:** quando o serviço não responde dentro do limite de espera
-  configurado, a aplicação encerra a espera, informa que a consulta demorou
+  de 10 segundos, a aplicação encerra a espera, informa que a consulta demorou
   demais e oferece nova tentativa manual. Não apresenta dados antigos como
-  atuais. O limite de espera precisa ser definido antes de se tornar critério
-  quantitativo de aceite.
+  atuais.
 - **Resposta meteorológica parcial:** quando uma resposta válida contém alguns
   campos ou dias ausentes, a aplicação apresenta os campos e dias disponíveis,
   indica como indisponíveis os campos ou dias sem dados e não inventa valores
@@ -426,10 +510,16 @@ aprovados até que as questões correspondentes sejam respondidas.
 - Celsius é a unidade inicial. A unidade escolhida vale somente durante a
   visita e não é persistida; recarregar a página ou iniciar outra visita
   restaura Celsius.
-- A conversão de temperaturas é arredondada para o grau inteiro mais próximo.
+- A conversão de temperaturas é arredondada para o grau inteiro mais próximo;
+  empates de 0,5 grau são arredondados para longe de zero.
 - Dados com mais de uma hora são sinalizados como desatualizados.
 - Diante de falha de conexão ou da fonte, há mensagem de erro e nova tentativa
-  manual; dados antigos não substituem dados atuais.
+  manual; dados em cache não são apresentados como atuais após falha.
+- Uma resposta meteorológica bem-sucedida com mais de uma hora pode ser
+  apresentada com indicação explícita de desatualização.
+- Máxima e mínima do clima atual se referem ao dia local; umidade é apresentada
+  em porcentagem e velocidade do vento em km/h.
+- Consultas de busca e meteorológicas sem resposta expiram após 10 segundos.
 - Não há autenticação nem persistência de dados de usuário no servidor.
 - Ausência de cadastro e persistência de servidor não define se haverá
   armazenamento local no navegador, telemetria ou retenção de registros pelo
@@ -482,14 +572,9 @@ aprovados até que as questões correspondentes sejam respondidas.
    oficialmente suportados?
 5. **Acessibilidade — prioridade média:** WCAG 2.2 nível AA é o padrão
    esperado? Quais tecnologias assistivas devem ser cobertas nos testes?
-6. **Dados incompletos — prioridade média:** quais campos meteorológicos são
-   mínimos para considerar uma resposta parcialmente preenchida utilizável, em
-   vez de exibir indisponíveis todos os dados da consulta?
-7. **Privacidade — prioridade média:** haverá telemetria ou armazenamento local
+6. **Privacidade — prioridade média:** haverá telemetria ou armazenamento local
    no navegador? Quais dados o provedor registra, por quanto tempo e sob quais
    condições de consentimento e transparência?
-8. **Usabilidade — prioridade média:** qual público será considerado
+7. **Usabilidade — prioridade média:** qual público será considerado
    representativo e qual protocolo validará a meta proposta de 90% de sucesso
    sem ajuda?
-9. **Timeout — prioridade média:** qual limite de espera deve ser aplicado às
-   consultas de busca e meteorológicas antes de exibir o estado de timeout?
