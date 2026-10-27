@@ -142,16 +142,65 @@ Temperaturas são mantidas em Celsius e convertidas apenas para apresentação c
 
 Usar somente os serviços oficiais definidos na spec. Não configurar chave nesta versão; revisar termos, limites e atribuição antes da publicação.
 
-- **Geocoding:** `https://geocoding-api.open-meteo.com/v1/search`
-  - Enviar `name` com o termo confirmado e sem espaços externos; usar `count=10`, `language=pt` e `format=json`.
-  - Exibir os resultados na ordem do provedor, sem paginação. Validar o comportamento de busca sem distinção de acentos e capitalização, sem adicionar correção de erros de digitação (RF-01).
-  - Normalizar o resultado para `City`, preservando o identificador, coordenadas e metadados disponíveis para distinguir localidades homônimas.
+- **Geocoding**
+  - **URL:** `https://geocoding-api.open-meteo.com/v1/search`
+  - **Parâmetros:** `name` (termo confirmado, sem espaços externos), `count=10`, `language=pt`, `format=json`. A API já faz correspondência sem distinção de maiúsculas/minúsculas e acentos; não adicionar correção de erros de digitação. Resultados vazios podem vir sem a propriedade `results`.
+  - **Exemplo resumido de resposta:**
 
-- **Forecast:** `https://api.open-meteo.com/v1/forecast`
-  - Enviar `latitude` e `longitude` da cidade selecionada.
-  - Solicitar apenas os campos necessários: `current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m`, `daily=weather_code,temperature_2m_max,temperature_2m_min` e `hourly=temperature_2m,weather_code`.
-  - Solicitar `forecast_days=5`, `timezone=auto` e `wind_speed_unit=kmh`. Manter temperaturas internamente em Celsius e não solicitar atualização automática em segundo plano.
-  - Usar as datas e horas locais devolvidas para a localidade, conservando metadados de fuso/offset necessários à normalização de timestamps e à distinção de horários locais repetidos (RF-02 a RF-05).
+    ```json
+    {
+      "results": [
+        {
+          "id": 2950159,
+          "name": "Berlim",
+          "latitude": 52.52437,
+          "longitude": 13.41053,
+          "country": "Alemanha",
+          "admin1": "Berlim",
+          "timezone": "Europe/Berlin"
+        }
+      ]
+    }
+    ```
+
+  - **Mapeamento:** cada elemento de `results` vira um `City`: `id`, `name`, `country`, `admin1` → `region`, `latitude` e `longitude`. Preservar a ordem retornada e a identidade da localidade selecionada; o campo `timezone` do Geocoding não substitui o fuso retornado pela consulta Forecast.
+
+- **Forecast**
+  - **URL:** `https://api.open-meteo.com/v1/forecast`
+  - **Parâmetros:** `latitude` e `longitude` da cidade selecionada; `current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m`; `daily=weather_code,temperature_2m_max,temperature_2m_min`; `hourly=temperature_2m,weather_code`; `forecast_days=5`; `timezone=auto`; `temperature_unit=celsius`; `wind_speed_unit=kmh`.
+  - Solicitar somente esses campos, manter as unidades normalizadas do modelo e não fazer atualização automática em segundo plano. `timezone=auto` faz a API devolver o identificador IANA e séries em horário local. Os arrays de cada granularidade são paralelos: os valores compartilham o índice correspondente ao item em `time`.
+  - **Exemplo resumido de resposta:**
+
+    ```json
+    {
+      "latitude": 52.52,
+      "longitude": 13.42,
+      "timezone": "Europe/Berlin",
+      "utc_offset_seconds": 7200,
+      "current": {
+        "time": "2025-06-15T14:00",
+        "temperature_2m": 22.4,
+        "relative_humidity_2m": 48,
+        "apparent_temperature": 22.1,
+        "weather_code": 2,
+        "wind_speed_10m": 12.6
+      },
+      "hourly": {
+        "time": ["2025-06-15T15:00", "2025-06-15T16:00"],
+        "temperature_2m": [22.0, 21.3],
+        "weather_code": [2, 3]
+      },
+      "daily": {
+        "time": ["2025-06-15", "2025-06-16"],
+        "weather_code": [2, 3],
+        "temperature_2m_max": [24.1, 21.8],
+        "temperature_2m_min": [14.2, 13.9]
+      }
+    }
+    ```
+
+  - **Mapeamento para `WeatherData`:** `timezone` alimenta o fuso do modelo. `current.time` alimenta `current.observedAt`; `temperature_2m`, `apparent_temperature`, `relative_humidity_2m`, `wind_speed_10m` e `weather_code` alimentam os campos correspondentes de `CurrentWeather`. Associar `temperature_2m_max` e `temperature_2m_min` do dia local atual (`daily.time` correspondente à data local de `current.time`) às máximas/mínimas atuais. Cada índice de `daily.time` gera um `ForecastDay` com condição e máximas/mínimas do mesmo índice. Agrupar os arrays horários por data local; cada ponto mapeia `hourly.time`, `weather_code` e `temperature_2m` para um `HourlyForecast`. Manter os cinco dias e não deslocar datas quando dados estiverem ausentes.
+  - Validar o tipo e o domínio de cada valor antes de normalizar: valores ausentes, nulos ou inválidos tornam apenas o campo correspondente `null`; resposta estruturalmente ilegível é falha. Converter códigos WMO em descrições em português na aplicação, sem enviar descrições inferidas como dados da API. A resposta não fornece um timestamp de atualização da previsão: `forecastUpdatedAt` fica `null`; `generationtime_ms` é duração de processamento, não horário de atualização.
 
 Atribuir visivelmente os dados ao Open-Meteo com link, tanto na visão atual quanto na previsão. Informar na política de privacidade que a consulta é enviada ao provedor e divulgar a retenção conforme os termos publicados (RNF-08, RNF-09).
 
