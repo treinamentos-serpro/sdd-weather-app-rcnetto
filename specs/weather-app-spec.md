@@ -365,15 +365,43 @@ aprovados até que as questões correspondentes sejam respondidas.
 
 ## Edge Cases
 
-- A busca não encontra nenhuma cidade para o texto informado.
+- **Cidade inexistente:** quando a pessoa informa o nome de uma cidade que não
+  existe ou não pode ser identificada, a aplicação informa que não encontrou a
+  cidade, não inicia uma consulta meteorológica para uma localidade não
+  selecionada e permite corrigir a busca.
+- **Input vazio:** quando a pessoa tenta pesquisar sem informar texto ou
+  informa apenas espaços, a aplicação não envia uma consulta de geocoding,
+  solicita um nome de cidade e mantém o campo disponível para edição.
+- **Caracteres especiais:** a aplicação aceita pontuação válida em nomes de
+  localidades (por exemplo, hífen ou apóstrofo) e pesquisa o texto como dado
+  literal, sem executar ou interpretar caracteres como comandos. Caracteres de
+  controle são removidos ou rejeitados antes da consulta; a aplicação informa
+  quando não resta texto pesquisável.
+- **Geocoding sem resultados:** quando o serviço de busca responde com sucesso,
+  mas retorna zero localidades, a aplicação informa que nenhuma cidade foi
+  encontrada, não apresenta isso como falha de conexão e permite ajustar a
+  busca.
+- **Falha de API:** quando a consulta de geocoding ou meteorológica falha, a
+  aplicação informa que não foi possível concluir a consulta, oferece nova
+  tentativa manual e não apresenta a falha como uma busca sem resultados. Para
+  falha meteorológica, não apresenta dados antigos como atuais.
+- **Timeout:** quando o serviço não responde dentro do limite de espera
+  configurado, a aplicação encerra a espera, informa que a consulta demorou
+  demais e oferece nova tentativa manual. Não apresenta dados antigos como
+  atuais. O limite de espera precisa ser definido antes de se tornar critério
+  quantitativo de aceite.
+- **Resposta meteorológica parcial:** quando uma resposta válida contém alguns
+  campos ou dias ausentes, a aplicação apresenta os campos e dias disponíveis,
+  indica como indisponíveis os campos ou dias sem dados e não inventa valores
+  nem substitui datas ausentes por dados de outro período. Se não houver dados
+  utilizáveis, informa que não foi possível obter os dados e oferece nova
+  tentativa.
 - A cidade pesquisada possui o mesmo nome de outras localidades; região/estado
   pode estar ausente em alguns resultados.
 - O texto de busca tem diferenças de acentuação ou capitalização em relação ao
   nome cadastrado.
 - A pessoa seleciona uma localidade para a qual a fonte não oferece dados
   meteorológicos atuais ou previsão completa.
-- A busca retorna resultados, mas a consulta do clima falha ou retorna dados
-  incompletos.
 - A conexão ou o Open-Meteo está indisponível durante a busca, a consulta atual,
   a previsão ou uma nova tentativa.
 - A resposta disponível tem mais de uma hora; ela deve ser sinalizada como
@@ -384,12 +412,6 @@ aprovados até que as questões correspondentes sejam respondidas.
 - A pessoa alterna a unidade enquanto o clima atual, a previsão diária e os
   detalhes horários estão visíveis; todos os valores devem continuar
   consistentes.
-- Algumas informações meteorológicas esperadas estão ausentes na resposta; o
-  produto não deve inventar valores. A apresentação de campos individuais
-  ausentes precisa ser definida no desenho de experiência.
-- A previsão de hoje ou de algum dos quatro dias seguintes não está disponível;
-  o produto não deve rotular dados de outro período como se correspondessem ao
-  dia ausente.
 
 ## Assumptions
 
@@ -460,12 +482,14 @@ aprovados até que as questões correspondentes sejam respondidas.
    oficialmente suportados?
 5. **Acessibilidade — prioridade média:** WCAG 2.2 nível AA é o padrão
    esperado? Quais tecnologias assistivas devem ser cobertas nos testes?
-6. **Dados incompletos — prioridade média:** como a interface deve apresentar
-   campos meteorológicos individuais ausentes ou uma previsão que não cubra
-   todos os cinco dias?
+6. **Dados incompletos — prioridade média:** quais campos meteorológicos são
+   mínimos para considerar uma resposta parcialmente preenchida utilizável, em
+   vez de exibir indisponíveis todos os dados da consulta?
 7. **Privacidade — prioridade média:** haverá telemetria ou armazenamento local
    no navegador? Quais dados o provedor registra, por quanto tempo e sob quais
    condições de consentimento e transparência?
 8. **Usabilidade — prioridade média:** qual público será considerado
    representativo e qual protocolo validará a meta proposta de 90% de sucesso
    sem ajuda?
+9. **Timeout — prioridade média:** qual limite de espera deve ser aplicado às
+   consultas de busca e meteorológicas antes de exibir o estado de timeout?
