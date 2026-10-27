@@ -63,8 +63,9 @@ src/
 ├── hooks/
 │   └── useWeather.ts        # Estado e orquestração principal
 ├── services/
-│   ├── geocodingService.ts  # Busca de cidades
-│   └── forecastService.ts   # Consulta do clima e previsão
+│   ├── weatherService.ts    # Geocoding e Forecast; único serviço público
+│   ├── fetchWithTimeout.ts  # JSON unknown, HTTP/rede/timeout e WeatherServiceError
+│   └── weatherMappers.ts    # Guards e normalização pura dos dados externos
 ├── lib/
 │   ├── weatherCodes.ts     # Código WMO → descrição
 │   ├── temperature.ts      # Conversão e arredondamento
@@ -197,7 +198,7 @@ Temperaturas são mantidas em Celsius e convertidas apenas para apresentação c
 
 1. A pessoa digita um nome e confirma a busca. A aplicação remove espaços externos, rejeita caracteres de controle e não envia consultas vazias ou compostas apenas por espaços; pontuação legítima é mantida (RF-01, RF-07).
 2. O hook inicia a busca e atualiza o estado para `loading`. O serviço de Geocoding consulta o provedor; o resultado é validado, normalizado e limitado a até 10 cidades, preservando a ordem recebida.
-3. A UI exibe cidade, país e região/estado quando disponíveis. A seleção mantém a identidade exata do resultado, inclusive para homônimos (RF-01).
+3. O hook seleciona automaticamente a primeira cidade e consulta seu Forecast. A lista permanece para escolha posterior, exibindo cidade, país e região/estado quando disponíveis. A seleção mantém a identidade exata do resultado, inclusive para homônimos (RF-01).
 4. Ao selecionar uma cidade, o hook solicita clima e previsão usando as coordenadas dessa cidade. O serviço de Forecast valida e normaliza os dados, incluindo o fuso local.
 5. O estado atualizado alimenta os componentes de condições atuais e de previsão. Os cinco dias mantêm suas datas mesmo quando algum deles não tiver dados; campos ausentes são marcados individualmente como indisponíveis (RF-02, RF-03, RF-08).
 6. A pessoa pode expandir qualquer um dos cinco dias para consultar os pontos horários daquele dia local (RF-03). A alternância °C/°F converte os dados já carregados, sem nova requisição (RF-04).
@@ -212,7 +213,7 @@ flowchart TD
     B -- Sim --> D[Geocoding service]
     D -- Falha de rede, API ou timeout --> E[Hook: estado error]
     D -- Resposta sem cidades --> F[Hook: estado empty]
-    D -- Cidades encontradas --> G[Pessoa seleciona uma cidade]
+    D -- Cidades encontradas --> G[Primeira cidade automática; escolha posterior disponível]
     G --> H[Forecast service]
     H -- Falha de rede, API ou timeout --> E
     H -- Nenhum dado utilizável --> F
@@ -353,10 +354,43 @@ Em buscas concorrentes, cancelar a operação anterior quando possível ou desca
 - **Fetch direto encapsulado em services vs. biblioteca de dados/cliente HTTP:** usar `fetch` nativo dentro dos services evita dependências para duas operações pequenas. Uma biblioteca especializada poderia oferecer cache, retry e deduplicação, mas traria comportamento automático incompatível com as decisões de simplicidade e sem cache.
 - **Testes por camada mais E2E vs. somente E2E:** unitários e de componentes localizam falhas rapidamente e cobrem casos de borda de forma determinística; E2E valida integração e responsividade. E2E isolado teria maior custo e fragilidade, enquanto testes unitários isolados não verificariam o fluxo real.
 - **Dependência e termos do provedor:** indisponibilidade, limites ou mudança de condições podem impedir consultas; respostas parciais são possíveis. Mitigar revisando cobertura, limites, termos e atribuição antes da publicação e periodicamente. Bloquear publicação se o uso sem chave não for permitido; não substituir o provedor sem revisão da spec.
-- **Ambiguidade geográfica:** homônimos ou variações podem levar à localidade errada. Exibir cidade, país e região quando disponíveis, preservar o identificador selecionado e não iniciar Forecast antes da seleção (RF-01).
+- **Ambiguidade geográfica:** homônimos ou variações podem levar à localidade errada. Exibir cidade, país e região quando disponíveis, preservar o identificador selecionado e consultar automaticamente a primeira cidade e permitir seleção posterior de homônimos (RF-01).
 - **Cobertura desigual ou dados antigos:** não inferir campos ausentes; sinalizar observações antigas e comunicar timestamps indisponíveis (RF-05, RF-08).
 - **Fuso e calendário:** usar o fuso local devolvido para as séries e validar mudança de dia e de horário sazonal; preservar datas e identificação dos pontos horários para evitar deslocamentos (RF-03).
 - **Conversão de unidades:** converter a partir dos Celsius não arredondados em um único ponto de apresentação. Isso evita nova requisição e reduz inconsistências, ao custo de manter o formato interno diferente de Fahrenheit (RF-04).
 - **Simplicidade versus persistência:** estado apenas em memória evita armazenamento proibido e respeita a unidade temporária; recarregar a página restaura Celsius e não recupera consultas (RF-04, RNF-08).
 - **Privacidade e telemetria:** não adicionar analytics, identificadores, cookies não essenciais ou armazenamento local. A consulta é compartilhada com o provedor e isso deve ser informado na política de privacidade (RNF-08).
 - **Acessibilidade e compatibilidade:** cumprir WCAG 2.2 AA e validar navegadores/dispositivos previstos requer testes automatizados e revisão manual; não presumir conformidade apenas por testes E2E (RNF-01, RNF-05).
+
+### Recorte P7 — serviços e hook sem integração ao App
+
+Executar P7.1/P7.2/P7.3/P7.4 em ordem; App permanece demo offline.
+weatherService.ts exporta searchCities(name): Promise<City[]> e
+getWeather(city): Promise<WeatherData>; helpers internos separam transporte e
+mapeamento, sem serviços distintos de Geocoding/Forecast. fetchWithTimeout
+retorna JSON unknown e cobre headers e leitura do body no mesmo limite de 10 s
+via AbortController, limpando timer em finally. WeatherServiceError preserva
+erros HTTP/JSON/estrutura; AbortError: “A requisição demorou demais.”; rede:
+“Falha de rede.”. Sem retry automático/cache. Entrada com controle e coordenadas
+inválidas falham antes da rede. Vazio retorna []; results ausente é vazio, tipo
+inválido é erro.
+
+Guards unknown validam os dados. Timezone IANA é validado com Intl, sem fallback.
+daily.time deve existir, não vazio, com datas válidas estritamente crescentes.
+Cinco datas consecutivas partem da primeira data daily; lacunas geram nulls,
+sem comprimir índices. Não há fallback ao relógio ou current.time. Arrays
+métricos curtos/ausentes geram null; current max/min usam a data current.time.
+Horários inválidos/ausentes são null (pontos hourly sem horário válido são
+descartados); hourly ausente é []. Números finitos; umidade/probabilidade
+[0,100], vento/precipitação >=0, pressão >0, WMO inteiro não negativo
+(desconhecidos preservados). forecastUpdatedAt permanece null.
+
+useWeather expõe status idle/loading/success/error/empty, data WeatherData|null,
+cities City[], error string|null, query confirmada com trim (inicial vazia),
+search, selectCity e retry. Busca vazia invalida operações e volta a idle sem
+rede; controle inválido produz error explícito. Loading/empty/error não exibem
+dados anteriores. Após Geocoding, preserva a lista para seleção posterior.
+Retry refaz só a operação falha (Forecast se Geocoding já teve sucesso), mantendo
+query/cities. All-null nas métricas atuais/diárias/horárias é empty; qualquer
+métrica útil é success. Token monotônico descarta operações anteriores, inclusive
+seleção/retry e respostas após unmount. Integração visual e produção pendentes.

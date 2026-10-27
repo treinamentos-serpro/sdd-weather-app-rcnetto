@@ -200,3 +200,20 @@ A validação de domínio na ingestão pertence ao serviço futuro. A fixture
 `MOCK_WEATHER` é fixa, não representa uma consulta atual e inclui essas métricas.
 Não há rede, hook, estados assíncronos, expansão horária nem integração dos
 componentes no App nesta fatia; essa composição fica para P6.7/T-26.
+
+### Serviços e hook (P7, sem integração visual)
+
+O App continua sendo a demo offline: não importa nem executa o hook.
+`src/services/weatherService.ts` exporta `searchCities(name)` e `getWeather(city)`
+e `WeatherServiceError`. Consultas usam somente Open-Meteo, sem cache ou retry
+automático; o timeout de 10 s cobre headers e JSON.
+
+Para consumidores futuros, `useWeather` (`src/hooks/useWeather.ts`) expõe
+`status`, `data` (`WeatherData | null`), `cities`, `error` (`string | null`),
+`query`, `search(name)`, `selectCity(city)` e `retry()`. Uma busca confirmada
+seleciona a primeira cidade automaticamente, mantendo a lista para escolha
+posterior. Retry repete apenas a operação falha; busca vazia volta a idle.
+Estados loading/empty/error não mantêm dados antigos como atuais. Dados sem
+métricas úteis produzem empty; dados parciais continuam disponíveis. Respostas
+obsoletas ou após unmount são descartadas. Integração ao App e validações de
+produção continuam fora deste recorte.

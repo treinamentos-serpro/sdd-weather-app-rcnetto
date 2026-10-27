@@ -197,7 +197,7 @@ valores inválidos viram `null`, nunca zero inventado.
 - **Descrição:** Fazer o hook consultar Forecast para as coordenadas da
   localidade escolhida.
 - **Critérios de aceite:**
-  - Forecast começa somente após seleção e recebe latitude/longitude da cidade
+  - Forecast começa automaticamente para o primeiro resultado e, na seleção posterior, recebe latitude/longitude da cidade
     selecionada, não somente o nome.
   - Estado Forecast é separado do estado da busca.
   - Resposta parcial com pelo menos um dado utilizável é `success`; ausência de
@@ -402,7 +402,7 @@ valores inválidos viram `null`, nunca zero inventado.
     na tela.
   - Busca vazia, loading, vazio e erro são comunicados; retry repete a mesma
     consulta.
-  - O fluxo integrado não inicia Forecast até que uma cidade seja selecionada.
+  - O fluxo seleciona automaticamente o primeiro resultado e permite seleção posterior sem perder a lista.
 - **Dependências:** T-02, T-10, T-11, T-15, T-16, T-17, T-24
 - **Arquivos prováveis:** `src/App.tsx`.
 - **Tipo:** UI
@@ -629,7 +629,7 @@ valores inválidos viram `null`, nunca zero inventado.
   mockado.
 - **Critérios de aceite:**
   - Testes verificam coordenadas exatas da cidade selecionada e ausência de
-    request antes da seleção.
+    request antes do retorno do Geocoding; depois consulta a primeira cidade automaticamente.
   - Testes verificam sucesso completo, sucesso parcial, vazio e erro.
   - Concluir/falhar Forecast não apaga o estado independente da busca.
 - **Dependências:** T-12
@@ -1048,3 +1048,24 @@ Critérios de aceite
 Ao concluir, resuma os arquivos criados, os critérios atendidos e os comandos
 executados com seus resultados.
 ```
+
+## Recorte solicitado P7 — execução local, sem conectar App
+
+Estes IDs complementam T-*; não declaram concluída a integração ou produção.
+Executar em ordem, com os testes correspondentes:
+
+- **P7.1:** searchCities em src/services/weatherService.ts: trim,
+  encodeURIComponent, count=10/language=pt/format=json, identidade/ordem,
+  admin1->region, guards e erros explícitos. Vazio sem rede.
+- **P7.2:** getWeather no mesmo serviço: parâmetros completos do plano,
+  current/daily obrigatórios, cinco datas sem compressão de lacunas, nulls por
+  domínio, timezone validado e horas preservadas. Testes com fetch mock.
+- **P7.3:** fetchWithTimeout e WeatherServiceError: 10 s inclusive body,
+  AbortController, mensagens pt-BR, cleanup em todos os caminhos; testes
+  9999/10000 ms, HTTP/JSON/rede e body pendente.
+- **P7.4:** useWeather com primeira cidade automática, lista para seleção
+  posterior, query trim, estados coerentes, retry da operação falha e token
+  concorrente/unmount. Testes renderHook, all-null vs parcial.
+
+Aceite local: pnpm lint, pnpm check, pnpm build e pnpm test. Não conectar App
+nem alterar demo offline; testes E2E/produção e integração continuam pendentes.
