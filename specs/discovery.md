@@ -26,12 +26,19 @@ O briefing define as capacidades principais, mas ainda não especifica público-
 
 ## Riscos
 
-- **Dados externos indisponíveis ou atrasados:** a consulta ao clima e à previsão pode falhar ou apresentar informações desatualizadas se a fonte de dados estiver indisponível.
-- **Resultados ambíguos na busca:** cidades com nomes iguais ou semelhantes podem levar à seleção de uma localidade incorreta.
-- **Interpretações diferentes de “cinco dias”:** o período pode ser contado a partir do dia atual ou corresponder aos cinco dias seguintes, gerando expectativas divergentes.
-- **Conversão ou apresentação inconsistente de temperatura:** trocar a unidade sem atualizar todas as temperaturas exibidas pode confundir o usuário.
-- **Experiência móvel insuficiente:** sem confirmação da matriz de dispositivos e navegadores, a cobertura da responsividade pode ficar incompleta.
-- **Escopo meteorológico indefinido:** o briefing não esclarece quais dados além da temperatura devem compor o clima atual e a previsão.
+As estimativas são iniciais e devem ser revistas após decisões sobre público-alvo, provedor e critérios de qualidade. **Impacto** representa o efeito potencial no produto caso o risco ocorra.
+
+| Categoria | Risco | Probabilidade | Impacto | Estratégia de mitigação |
+|---|---|---|---|---|
+| Técnico — Dados externos | Indisponibilidade, lentidão, limites de consulta ou mudança de contrato do provedor podem interromper ou degradar as consultas. | Média | Alto: clima atual e previsão podem ficar inacessíveis ou incompletos. | Avaliar cobertura, SLA, limites, licença e histórico do provedor antes da escolha; definir timeout, tratamento de erro, monitoramento e estratégia de contingência compatível com o contrato. |
+| Técnico — Atualidade e qualidade dos dados | Dados podem estar atrasados, incompletos ou ter cobertura desigual entre localidades. | Média | Alto: usuários podem tomar decisões com informações incorretas ou antigas. | Definir requisitos de atualização e cobertura; exibir horário da última atualização e sinalizar dados expirados; validar respostas e monitorar falhas de qualidade. |
+| Produto — Busca de cidades | Cidades homônimas ou variações de grafia podem levar à seleção de uma localidade incorreta. | Média | Alto: a previsão apresentada pode não corresponder à cidade procurada. | Definir cobertura e comportamento de busca; mostrar contexto suficiente para distinguir resultados, como região e país; testar nomes ambíguos e variantes com acentos. |
+| Produto — Interpretação da previsão | “Cinco dias” pode significar períodos diferentes, e o fuso horário pode deslocar datas e horários. | Média | Médio: conteúdo e expectativa do usuário podem divergir, gerando retrabalho em UI, API e testes. | Confirmar se o dia atual está incluído, a granularidade e o fuso; documentar a regra e validá-la com usuários antes da implementação. |
+| Produto — Escopo e aderência | Sem público-alvo, objetivo ou métrica de sucesso, o time pode priorizar funcionalidades que não resolvem a necessidade principal. | Alta | Alto: baixo uso ou insatisfação mesmo com as funções implementadas. | Validar personas e cenários prioritários com stakeholders e usuários; definir métricas de sucesso e critérios de aceite antes de fechar a spec. |
+| Técnico — Desempenho e disponibilidade | Dependência de rede e de API externa pode fazer as respostas excederem as expectativas de velocidade ou disponibilidade. | Média | Alto: abandono, repetição de consultas e perda de confiança. | Acordar metas mensuráveis e condições de medição; instrumentar tempos e erros; definir limites de espera, retentativas controladas e estados de carregamento/erro. |
+| Técnico — Conversão de unidades | Arredondamento incorreto ou atualização parcial dos valores ao alternar entre Celsius e Fahrenheit pode produzir dados inconsistentes. | Baixa | Médio: confusão e perda de confiança nos valores exibidos. | Centralizar conversão e formatação; definir regra de arredondamento; testar todos os valores e componentes que exibem temperatura em ambas as unidades. |
+| Técnico — Compatibilidade móvel e acessibilidade | Suporte indefinido de dispositivos, navegadores e tecnologias assistivas pode deixar grupos de usuários sem acesso às funções principais. | Média | Alto: experiência quebrada, barreiras de acesso e possíveis falhas de conformidade. | Definir matriz de suporte e padrão de acessibilidade; validar fluxos principais em viewports móveis, teclado e leitor de tela como parte dos critérios de aceite. |
+| Produto/Técnico — Privacidade | Consultas de cidade ou eventual uso de localização podem ser enviados ou armazenados sem regras claras. | Baixa | Alto: risco de coleta desnecessária, perda de confiança e obrigações de conformidade. | Evitar coletar localização automática sem necessidade e consentimento; mapear dados enviados ao provedor, retenção e analytics; validar requisitos de privacidade antes do lançamento. |
 
 ## Ambiguidades, Perguntas em Aberto e Impactos
 
