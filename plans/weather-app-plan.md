@@ -50,69 +50,83 @@ O hook coordena as operações; os serviços cuidam do acesso a dados; component
 
 ## Data Model
 
-Contratos conceituais TypeScript. Respostas externas devem ser validadas e normalizadas antes de chegar à UI; valores ausentes ou inválidos permanecem indisponíveis, nunca substituídos por dados inventados (RF-08).
+Contratos conceituais TypeScript para os dados normalizados da Open-Meteo. Respostas externas devem ser validadas antes de chegar à UI. Valores ausentes ou inválidos são representados como `null`, nunca substituídos por dados inventados; dias sem previsão mantêm sua data e indicam os campos indisponíveis (RF-08).
 
 ```ts
-type TemperatureUnit = 'celsius' | 'fahrenheit';
+/** Unidade usada para apresentar temperaturas; os dados internos permanecem em Celsius. */
+export type Unit = 'celsius' | 'fahrenheit';
 
-interface City {
+export interface City {
+  /** Identificador da localidade retornado pelo Geocoding. */
   id: number;
+  /** Nome da cidade retornado pelo Geocoding. */
   name: string;
+  /** País da cidade. */
   country: string;
+  /** Região ou estado, quando disponível. */
   region?: string;
+  /** Latitude usada para consultar a previsão. */
   latitude: number;
+  /** Longitude usada para consultar a previsão. */
   longitude: number;
 }
 
-interface WeatherValue<T> {
-  value?: T;
-  available: boolean;
+export interface CurrentWeather {
+  /** Horário da observação fornecido pela API, interpretado no fuso local da cidade. */
+  observedAt: string | null;
+  /** Código WMO da condição atual; a descrição em português é derivada na aplicação. */
+  weatherCode: number | null;
+  /** Temperatura atual em graus Celsius. */
+  temperatureC: number | null;
+  /** Sensação térmica em graus Celsius. */
+  apparentTemperatureC: number | null;
+  /** Temperatura máxima do dia local em graus Celsius. */
+  temperatureMaxC: number | null;
+  /** Temperatura mínima do dia local em graus Celsius. */
+  temperatureMinC: number | null;
+  /** Umidade relativa em porcentagem, no intervalo de 0 a 100. */
+  humidityPercent: number | null;
+  /** Velocidade do vento em quilômetros por hora. */
+  windSpeedKmh: number | null;
 }
 
-interface CurrentWeather {
-  observedAtUtc?: string;
-  condition: WeatherValue<string>;
-  temperatureC: WeatherValue<number>;
-  apparentTemperatureC: WeatherValue<number>;
-  highC: WeatherValue<number>;
-  lowC: WeatherValue<number>;
-  humidityPercent: WeatherValue<number>;
-  windSpeedKmh: WeatherValue<number>;
-  freshness: 'recent' | 'stale' | 'unknown';
+export interface HourlyForecast {
+  /** Horário local do ponto previsto, conforme retornado para o fuso da cidade. */
+  time: string;
+  /** Código WMO da condição prevista para esse horário. */
+  weatherCode: number | null;
+  /** Temperatura prevista em graus Celsius. */
+  temperatureC: number | null;
 }
 
-interface HourlyForecast {
-  localTime: string;
-  utcOffsetSeconds?: number;
-  condition: WeatherValue<string>;
-  temperatureC: WeatherValue<number>;
-}
-
-interface ForecastDay {
-  localDate: string;
-  condition: WeatherValue<string>;
-  highC: WeatherValue<number>;
-  lowC: WeatherValue<number>;
+export interface ForecastDay {
+  /** Data local no formato YYYY-MM-DD. */
+  date: string;
+  /** Código WMO da condição prevista para o dia. */
+  weatherCode: number | null;
+  /** Temperatura máxima diária em graus Celsius. */
+  temperatureMaxC: number | null;
+  /** Temperatura mínima diária em graus Celsius. */
+  temperatureMinC: number | null;
+  /** Pontos horários da previsão pertencentes a este dia local. */
   hours: HourlyForecast[];
 }
 
-interface WeatherResult {
+export interface WeatherData {
+  /** Localidade selecionada para a consulta. */
   city: City;
+  /** Fuso horário IANA usado para interpretar datas e horários. */
   timezone: string;
+  /** Condições meteorológicas atuais. */
   current: CurrentWeather;
-  days: ForecastDay[];
-  forecastUpdatedAt?: string;
+  /** Previsão de hoje e dos quatro dias seguintes, na ordem local. */
+  forecastDays: ForecastDay[];
+  /** Horário de atualização da previsão, somente se fornecido pela fonte. */
+  forecastUpdatedAt: string | null;
 }
-
-type OperationState<T> =
-  | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'success'; data: T }
-  | { status: 'empty' }
-  | { status: 'error'; message: string };
 ```
 
-Temperaturas são mantidas em Celsius e convertidas apenas para apresentação, usando o valor original e arredondamento ao inteiro mais próximo; empates de 0,5 são arredondados para longe de zero. Isso evita divergências entre componentes e impede conversões sucessivas sobre valores já arredondados (RF-04).
+Temperaturas são mantidas em Celsius e convertidas apenas para apresentação conforme `Unit`, usando o valor original e arredondamento ao inteiro mais próximo; empates de 0,5 são arredondados para longe de zero. Isso evita divergências entre componentes e impede conversões sucessivas sobre valores já arredondados (RF-04). `weatherCode` é o código WMO retornado pela API; o mapeamento para descrições em português pertence à camada de apresentação/dominio. Não inferir horário de atualização da previsão a partir de horários de validade dos pontos previstos (RF-05).
 
 ## Data Flow
 
