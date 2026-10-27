@@ -20,7 +20,7 @@ App
 
 `App.tsx` compõe o fluxo e `main.tsx` inicializa React. O fluxo de dependência não forma ciclos: components → hooks → services → lib; tipos são compartilhados sem importar implementação. Isso mantém detalhes da API fora da UI e permite substituir dependências por mocks nos testes.
 
-## P6.7 — Integração demonstrativa offline
+## P6.7 — Integração demonstrativa offline (histórico, substituída por P7.5)
 
 Fatia de UI anterior à integração de produção T-26: `App.tsx` compõe
 `SearchBar`, `UnitToggle`, `CurrentWeather` e `ForecastList` com `MOCK_WEATHER`,
@@ -177,7 +177,7 @@ export interface WeatherData {
 
 Temperaturas são mantidas em Celsius e convertidas apenas para apresentação conforme `Unit`, usando o valor original e arredondamento ao inteiro mais próximo; empates de 0,5 são arredondados para longe de zero. Isso evita divergências entre componentes e impede conversões sucessivas sobre valores já arredondados (RF-04). `weatherCode` é o código WMO retornado pela API; o mapeamento para descrições em português pertence à camada de apresentação/dominio. Não inferir horário de atualização da previsão a partir de horários de validade dos pontos previstos (RF-05).
 
-### Componentes de apresentação P6.3–P6.5
+### Componentes de apresentação P6.3–P6.5 (escopo histórico)
 
 - `UnitToggle({ unit, onChange })`: controlado, grupo de dois botões °C/°F
   com `aria-pressed`, Tab/Enter/Space nativos, sem estado duplicado.
@@ -192,7 +192,7 @@ Temperaturas são mantidas em Celsius e convertidas apenas para apresentação c
   rotular Hoje por índice; exibir DD/MM/AAAA.
 - Campos nulos são individualmente indisponíveis; lista vazia e dia totalmente
   indisponível têm mensagem explícita. Sem rede, hooks ou integração em App
-  nesta entrega; integração permanece em P6.7/T-26.
+  nesta entrega histórica; composição P6.7 posteriormente substituída por P7.5.
 
 ## Data Flow
 
@@ -362,7 +362,7 @@ Em buscas concorrentes, cancelar a operação anterior quando possível ou desca
 - **Privacidade e telemetria:** não adicionar analytics, identificadores, cookies não essenciais ou armazenamento local. A consulta é compartilhada com o provedor e isso deve ser informado na política de privacidade (RNF-08).
 - **Acessibilidade e compatibilidade:** cumprir WCAG 2.2 AA e validar navegadores/dispositivos previstos requer testes automatizados e revisão manual; não presumir conformidade apenas por testes E2E (RNF-01, RNF-05).
 
-### Recorte P7 — serviços e hook sem integração ao App
+### Recorte P7.1–P7.4 — serviços e hook sem integração ao App (histórico)
 
 Executar P7.1/P7.2/P7.3/P7.4 em ordem; App permanece demo offline.
 weatherService.ts exporta searchCities(name): Promise<City[]> e
@@ -394,3 +394,30 @@ Retry refaz só a operação falha (Forecast se Geocoding já teve sucesso), man
 query/cities. All-null nas métricas atuais/diárias/horárias é empty; qualquer
 métrica útil é success. Token monotônico descarta operações anteriores, inclusive
 seleção/retry e respostas após unmount. Integração visual e produção pendentes.
+
+
+### P7.5 — Integrar App ao useWeather (nova fatia de T-26)
+
+Substituir a composição demonstrativa por `useWeather` real, sem alterar a lógica
+P7.1–P7.4. Inicial idle sem consulta automática; SearchBar confirma `search` e
+fica desabilitada em loading. A unidade vive no App, inicia Celsius e persiste
+em buscas, seleção, retry e todos os estados; conversão somente no render.
+Manter lista de cidades (nome/região/país), botões nativos para `selectCity`,
+desabilitados durante loading, sem duplicar estado do hook. Success exige data
+não nulo; incoerência deve exibir erro explícito, não sucesso vazio. Loading e
+erro não apresentam dados antigos. Empty distingue geocoding sem cidades de
+forecast sem métricas; ErrorState acessível aciona `retry` do hook.
+
+Exibir horário local da observação informado pela fonte em pt-BR, preservando
+a data civil e timezone, sem converter pelo fuso do dispositivo nem alegar
+recência. Ausência é explícita. Não implementar age/DST: T-19/RF-05 continuam
+pendentes; forecastUpdatedAt continua null, sem data inventada. Detalhes horários
+(T-21), E2E e conclusão integral de T-26/produção não fazem parte desta fatia.
+Atribuir Open-Meteo com link externo seguro e informar envio da consulta/cidade.
+Remover DemoWeatherContent morto; preservar fixture de testes. Atualizar README
+e rotular descrições anteriores como históricas, sem apagar decisões anteriores.
+
+Testar App com serviços mockados (não hook/rede): idle, busca/loading/sucesso,
+cinco cards, conversão sem requests/mutação, seleção exata de homônimos,
+empty distinto, erros/retry por operação e persistência de query/unidade.
+Aceite: `pnpm lint`, `pnpm check`, `pnpm build`, `pnpm test`.

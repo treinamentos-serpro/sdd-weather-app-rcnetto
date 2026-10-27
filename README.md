@@ -100,24 +100,35 @@ Decisões-chave:
 - **Rede isolada** em `services/` — componentes e hooks não conhecem URLs.
 - Sempre tratar **loading**, **erro** e **vazio**.
 
-### Fixture e modo offline
+### Aplicação atual — integração P7.5
 
-`src/fixtures/weather.ts` exporta `MOCK_WEATHER`, uma fixture determinística
-com dados em Celsius para desenvolvimento e testes. Ela não é uma resposta
-atual da API. O modo demonstração offline inicia em sucesso, mostrando São Paulo
-com cinco dias fixos e a data de observação da fixture, explicitamente não atual.
-A busca só muda o resultado ao confirmar: aceita somente o nome completo
-São Paulo (ignora espaços externos, caixa e acentos, não pontuação); qualquer
-outro termo mostra sem resultados. Não consulta serviços nem renomeia a fixture.
+O App usa `useWeather` e os serviços Open-Meteo. Inicia em **idle**, sem consulta
+automática: digitar não envia requests, apenas confirmar uma busca não vazia.
+A primeira cidade é selecionada automaticamente; a lista mantém nome, região e
+país para escolher outra localidade, inclusive homônimos. A busca e os botões
+de cidades ficam desabilitados durante loading. Erro oferece nova tentativa da
+operação que falhou (Geocoding ou Forecast), sem apresentar dados antigos.
+Vazio distingue nenhuma cidade encontrada de condições indisponíveis.
 
-O seletor **Modo demonstração — estado da tela** permite explorar Inicial,
-Carregando, Sem resultados, Erro e Sucesso. Carregando desabilita a busca, mas
-permite sair pelo seletor; nenhum timer simula uma consulta. O erro é apenas
-uma demonstração: a nova tentativa manual repete a busca local pelo último
-termo confirmado (ou São Paulo se ainda não houve busca), preservando o campo.
-A unidade começa em Celsius e é mantida ao buscar ou trocar estados; a
-conversão para Fahrenheit ocorre só na apresentação, sem alterar a fixture.
-Não há chamadas de rede neste modo.
+A unidade inicia em Celsius e persiste em buscas, seleção, retry e todos os
+estados. A conversão é somente visual para o painel e os cinco cards, sem nova
+consulta ou alteração dos dados originais. A consulta e a cidade selecionada
+são enviadas à Open-Meteo; não há dados de busca na URL da aplicação.
+
+A observação apresenta o horário local informado pela fonte em pt-BR e seu
+fuso, ou informa ausência. Não há classificação de recência/aviso de idade nem
+tratamento completo de DST nesta fatia: **T-19/RF-05 ainda não estão completos**.
+A fonte não fornece horário de atualização da previsão (`forecastUpdatedAt`
+permanece null); a UI informa isso sem inventar datas. Detalhes horários (T-21),
+validação E2E e conclusão integral de T-26/produção permanecem pendentes.
+
+#### Histórico P6.7 — demo offline substituída
+
+P6.7 compunha uma demonstração offline com `MOCK_WEATHER`, busca local de São
+Paulo e seletor dos cinco estados. Essa UI foi substituída pela integração P7.5:
+não há seletor demo nem fixture na UI de produção. `src/fixtures/weather.ts`
+continua exportando dados determinísticos em Celsius para desenvolvimento e
+testes; não representa uma consulta atual.
 
 ---
 
@@ -196,24 +207,25 @@ Contrato adicional nullable (`number | null`):
 
 Nulidades são indisponíveis por campo; zero é dado válido. Sem temperatura
 atual, o painel informa indisponibilidade geral e preserva as demais métricas.
-A validação de domínio na ingestão pertence ao serviço futuro. A fixture
+Na entrega histórica P6, a validação de domínio na ingestão ainda pertencia ao
+serviço futuro (implementado em P7.1–P7.4). A fixture
 `MOCK_WEATHER` é fixa, não representa uma consulta atual e inclui essas métricas.
-Não há rede, hook, estados assíncronos, expansão horária nem integração dos
-componentes no App nesta fatia; essa composição fica para P6.7/T-26.
+Historicamente, esta fatia P6 não incluía rede, hook, estados assíncronos ou
+composição App. P7.5 integra esses componentes; expansão horária segue pendente.
 
-### Serviços e hook (P7, sem integração visual)
+### Serviços e hook (P7.1–P7.4, conectados ao App em P7.5)
 
-O App continua sendo a demo offline: não importa nem executa o hook.
+O recorte original P7.1–P7.4 não conectava o App; P7.5 realiza essa integração.
 `src/services/weatherService.ts` exporta `searchCities(name)` e `getWeather(city)`
 e `WeatherServiceError`. Consultas usam somente Open-Meteo, sem cache ou retry
 automático; o timeout de 10 s cobre headers e JSON.
 
-Para consumidores futuros, `useWeather` (`src/hooks/useWeather.ts`) expõe
+Usado pelo App, `useWeather` (`src/hooks/useWeather.ts`) expõe
 `status`, `data` (`WeatherData | null`), `cities`, `error` (`string | null`),
 `query`, `search(name)`, `selectCity(city)` e `retry()`. Uma busca confirmada
 seleciona a primeira cidade automaticamente, mantendo a lista para escolha
 posterior. Retry repete apenas a operação falha; busca vazia volta a idle.
 Estados loading/empty/error não mantêm dados antigos como atuais. Dados sem
 métricas úteis produzem empty; dados parciais continuam disponíveis. Respostas
-obsoletas ou após unmount são descartadas. Integração ao App e validações de
-produção continuam fora deste recorte.
+obsoletas ou após unmount são descartadas. A integração ao App está em P7.5;
+validações E2E e demais requisitos de produção continuam pendentes.

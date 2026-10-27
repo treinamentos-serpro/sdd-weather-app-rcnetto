@@ -38,7 +38,7 @@ function errorMessage(error: unknown): string {
     : 'Não foi possível consultar o clima. Tente novamente.';
 }
 
-/** Estado em memória; nenhuma integração automática com o App ou persistência. */
+/** Estado em memória; sem busca automática ou persistência. */
 export function useWeather() {
   const [state, setState] = useState<WeatherState>(initialState);
   const generation = useRef(0);

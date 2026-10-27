@@ -12,8 +12,9 @@ Rastreabilidade da entrega de UI: **P6.3** → T-22 + T-04/T-28;
 **P6.4** → T-18/T-42 + T-05/T-29;
 **P6.5** → T-20/T-44 + T-06 (datas civis); teclado/unidades → T-46.
 Componentes e testes desta fatia são standalone; rede/hooks, estados assíncronos,
-expansão horária (T-21) e integração de produção App (T-26) permanecem futuros.
-P6.7 integra a UI offline conforme a nota abaixo, sem concluir T-26.
+expansão horária (T-21) e conclusão integral de produção (T-26) permanecem pendentes.
+P6.7 integrou a UI offline (histórico), substituída por P7.5 abaixo. P7.1–P7.4
+entregam serviços/hook; P7.5 conecta App sem concluir todo T-26/backlog.
 
 ## Entrega 1 — Tipos e fundação
 
@@ -409,7 +410,7 @@ valores inválidos viram `null`, nunca zero inventado.
 - **Tipo:** UI
 - **Requisitos:** RF-01, RF-06, RF-07.
 
-### P6.7 — Compor layout demonstrativo offline (fatia de T-26)
+### P6.7 — Compor layout demonstrativo offline (histórico, substituído por P7.5)
 
 - **Escopo:** layout dark glass mobile-first com marca, SearchBar e UnitToggle
   no header; integrar `MOCK_WEATHER` a CurrentWeather e ForecastList no sucesso.
@@ -1051,7 +1052,7 @@ Ao concluir, resuma os arquivos criados, os critérios atendidos e os comandos
 executados com seus resultados.
 ```
 
-## Recorte solicitado P7 — execução local, sem conectar App
+## Recorte solicitado P7.1–P7.4 — sem conectar App (histórico)
 
 Estes IDs complementam T-*; não declaram concluída a integração ou produção.
 Executar em ordem, com os testes correspondentes:
@@ -1071,3 +1072,28 @@ Executar em ordem, com os testes correspondentes:
 
 Aceite local: pnpm lint, pnpm check, pnpm build e pnpm test. Não conectar App
 nem alterar demo offline; testes E2E/produção e integração continuam pendentes.
+
+
+## P7.5 — Conectar App ao useWeather (nova integração, fatia de T-26)
+
+- **Dependências:** P7.1–P7.4 e componentes P6.
+- **Rastreabilidade:** RF-01/02/03/04/06/08; T-26 parcial, T-19/RF-05 não concluídos.
+- **Arquivos:** App, CityResults, states/ErrorState, testes unitários App e README.
+- **Aceite:**
+  1. Idle orienta busca sem request automático; digitar/vazio não consulta.
+  2. SearchBar chama search, desabilitada em loading; estados status/alert
+     acessíveis. Success somente com data; incoerência vira erro explícito.
+  3. Empty distingue nenhuma cidade da indisponibilidade de condições. Erro
+     não mostra dados antigos; botão de ErrorState chama retry da operação falha.
+  4. Lista preserva identidade/nome/região/país; botões nativos chamam selectCity
+     com a cidade exata, desabilitados em loading. Primeira cidade automática.
+  5. Unidade Celsius inicial mantida em todos os estados/buscas/retry/seleção;
+     CurrentWeather e cinco cards recebem unit, sem mutação/request ao converter.
+  6. Horário local da observação da fonte em pt-BR + timezone quando disponível;
+     ausente explícito, sem alegar recente. Sem age/DST ou detalhes horários.
+  7. Remover UI demo e componente morto, manter fixture; atribuição Open-Meteo
+     segura e nota sobre envio da consulta/cidade. Docs históricas identificadas.
+  8. Testes com serviços mockados, nunca hook/API real, cobrindo os fluxos acima,
+     retry Geocoding versus Forecast e query persistente. Preservar demais testes.
+- **Validação:** pnpm lint, pnpm check, pnpm build, pnpm test. Não declarar
+  backlog/produção completos; E2E, T-19, T-21 e restante de T-26 seguem pendentes.
