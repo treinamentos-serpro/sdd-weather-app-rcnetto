@@ -12,7 +12,8 @@ Rastreabilidade da entrega de UI: **P6.3** → T-22 + T-04/T-28;
 **P6.4** → T-18/T-42 + T-05/T-29;
 **P6.5** → T-20/T-44 + T-06 (datas civis); teclado/unidades → T-46.
 Componentes e testes desta fatia são standalone; rede/hooks, estados assíncronos,
-expansão horária (T-21) e integração App (P6.7/T-26) permanecem futuros.
+expansão horária (T-21) e integração de produção App (T-26) permanecem futuros.
+P6.7 integra a UI offline conforme a nota abaixo, sem concluir T-26.
 
 ## Entrega 1 — Tipos e fundação
 
@@ -406,6 +407,28 @@ valores inválidos viram `null`, nunca zero inventado.
 - **Arquivos prováveis:** `src/App.tsx`.
 - **Tipo:** UI
 - **Requisitos:** RF-01, RF-06, RF-07.
+
+### P6.7 — Compor layout demonstrativo offline (fatia de T-26)
+
+- **Escopo:** layout dark glass mobile-first com marca, SearchBar e UnitToggle
+  no header; integrar `MOCK_WEATHER` a CurrentWeather e ForecastList no sucesso.
+- **Critérios de aceite:**
+  - Seletor acessível rotulado modo demonstração com cinco opções pt-BR:
+    inicial, carregando, sem resultados, erro e sucesso; começa em sucesso.
+  - Busca local somente por nome completo São Paulo, com trim e comparação
+    sem caixa/acentos, sem normalizar pontuação nem renomear a fixture.
+    Outras cidades mostram vazio; digitar sem confirmar não muda o conteúdo.
+  - Idle orienta pesquisa; loading e empty usam status distintos (empty inclui
+    consulta quando houver); erro demonstrativo usa alert e retry manual.
+    Loading desabilita SearchBar, mas o seletor permite sair desse estado.
+  - Retry local usa último termo confirmado ou cidade fixture se não houver,
+    resolve sucesso/vazio e preserva campo e unidade. Celsius inicial; troca
+    converte clima e cinco dias ao renderizar sem modificar os dados.
+  - Atribuição Open-Meteo com link externo seguro e observação fixa explicitamente
+    não atual; sem rede, timers, hook/API, detalhes horários ou relógio de stale.
+  - Testes de integração em `tests/unit/App.test.tsx` cobrem estados exclusivos,
+    busca, retry, unidade, atribuição e ausência de fetch.
+- **Limite:** não substitui os critérios de produção de T-26 abaixo.
 
 ### T-26 — Integrar clima e previsão à aplicação
 

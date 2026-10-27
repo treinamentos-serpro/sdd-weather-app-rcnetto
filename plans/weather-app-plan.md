@@ -20,6 +20,25 @@ App
 
 `App.tsx` compõe o fluxo e `main.tsx` inicializa React. O fluxo de dependência não forma ciclos: components → hooks → services → lib; tipos são compartilhados sem importar implementação. Isso mantém detalhes da API fora da UI e permite substituir dependências por mocks nos testes.
 
+## P6.7 — Integração demonstrativa offline
+
+Fatia de UI anterior à integração de produção T-26: `App.tsx` compõe
+`SearchBar`, `UnitToggle`, `CurrentWeather` e `ForecastList` com `MOCK_WEATHER`,
+sem rede, hooks de consulta ou timers. Inicia em `success` e Celsius; unidade
+é estado independente e a conversão ocorre apenas na apresentação.
+
+Um seletor acessível, explicitamente rotulado como modo demonstração, oferece
+cinco estados em pt-BR: inicial, carregando, sem resultados, erro e sucesso.
+A busca confirmada local compara somente o nome completo São Paulo, removendo
+espaços externos e ignorando caixa/acentos (sem alterar pontuação ou fixture);
+outras consultas mostram vazio. Loading desabilita a busca, não o seletor.
+Retry manual usa o último termo confirmado ou a cidade da fixture, preservando
+o campo e a unidade; os estados e erros são identificados como demonstrativos.
+O sucesso exibe cinco dias, atribuição Open-Meteo com link externo seguro e
+observação fixa identificada como não atual. Não implementa detalhes horários,
+API ou cálculo dinâmico de desatualização; os requisitos de produção permanecem
+inalterados e T-26 não está concluída por esta fatia.
+
 ## Tech Stack
 
 - **React + TypeScript strict + Vite:** stack existente no repositório para uma aplicação web responsiva, com componentes funcionais e tipos explícitos.

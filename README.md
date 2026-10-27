@@ -104,8 +104,20 @@ Decisões-chave:
 
 `src/fixtures/weather.ts` exporta `MOCK_WEATHER`, uma fixture determinística
 com dados em Celsius para desenvolvimento e testes. Ela não é uma resposta
-atual da API. O shell inicial aceita a busca manualmente, mas funciona offline:
-não consulta serviços nem fabrica resultados meteorológicos.
+atual da API. O modo demonstração offline inicia em sucesso, mostrando São Paulo
+com cinco dias fixos e a data de observação da fixture, explicitamente não atual.
+A busca só muda o resultado ao confirmar: aceita somente o nome completo
+São Paulo (ignora espaços externos, caixa e acentos, não pontuação); qualquer
+outro termo mostra sem resultados. Não consulta serviços nem renomeia a fixture.
+
+O seletor **Modo demonstração — estado da tela** permite explorar Inicial,
+Carregando, Sem resultados, Erro e Sucesso. Carregando desabilita a busca, mas
+permite sair pelo seletor; nenhum timer simula uma consulta. O erro é apenas
+uma demonstração: a nova tentativa manual repete a busca local pelo último
+termo confirmado (ou São Paulo se ainda não houve busca), preservando o campo.
+A unidade começa em Celsius e é mantida ao buscar ou trocar estados; a
+conversão para Fahrenheit ocorre só na apresentação, sem alterar a fixture.
+Não há chamadas de rede neste modo.
 
 ---
 
