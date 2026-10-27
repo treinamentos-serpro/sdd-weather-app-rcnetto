@@ -33,19 +33,24 @@ O briefing define as capacidades principais, mas ainda não especifica público-
 - **Experiência móvel insuficiente:** sem confirmação da matriz de dispositivos e navegadores, a cobertura da responsividade pode ficar incompleta.
 - **Escopo meteorológico indefinido:** o briefing não esclarece quais dados além da temperatura devem compor o clima atual e a previsão.
 
-## Perguntas em Aberto
+## Ambiguidades, Perguntas em Aberto e Impactos
 
-- Qual fonte de dados meteorológicos deve ser utilizada e há restrições de licença, custo ou volume de consultas?
-- A busca deve aceitar nomes parciais, acentos e localidades em diferentes países? Como o usuário distingue cidades homônimas?
-- Quais informações compõem o clima atual e a previsão, além da temperatura (por exemplo, condição, máxima e mínima)?
-- A previsão de cinco dias inclui o dia atual? Deve ser apresentada por dia, por hora ou em ambos os formatos?
-- A unidade escolhida deve permanecer após recarregar a aplicação ou iniciar uma nova sessão?
-- Qual deve ser o comportamento quando a busca não encontra resultados, a fonte de dados falha ou a conexão é perdida?
-- Quais idiomas, navegadores e dispositivos devem ser suportados? A faixa inicial de 320 px a 1440 px é adequada?
-- As metas propostas de usabilidade (90%), desempenho (95% em até 3 segundos) e disponibilidade (99,5% ao mês) são aceitáveis? Em quais condições devem ser medidas?
-- Qual limite de idade dos dados deve provocar um aviso de desatualização?
-- A WCAG 2.2 nível AA é o padrão de acessibilidade esperado?
-- Há requisitos de privacidade, retenção de dados ou analytics associados ao uso da aplicação?
+As prioridades abaixo são preliminares: **Crítica** indica potencial de alterar escopo ou arquitetura; **Alta**, de comprometer uma função central ou seus critérios de aceite; **Média**, de afetar qualidade, conformidade ou cobertura.
+
+| Classificação | Pergunta em aberto | Impacto caso fique sem resposta |
+|---|---|---|
+| Produto — Crítica | Quem é o público-alvo, qual necessidade principal o app deve resolver e como o sucesso será medido? | O produto pode entregar funcionalidades sem atender à necessidade prioritária; decisões de experiência e escopo ficam sem critério de valor. |
+| Plataforma — Crítica | “Usar em dispositivos móveis” significa web responsiva, aplicativo nativo ou ambos? Quais navegadores, sistemas e larguras de tela serão suportados? | Escopo, arquitetura e esforço podem mudar; a responsividade não terá uma matriz objetiva de validação. |
+| Dados e integração — Crítica | Qual provedor meteorológico será usado e quais são suas condições de custo, licença, cobertura, limites e atribuição? | A integração pode precisar ser refeita ou ficar limitada por custo, cobertura ou restrições contratuais. |
+| Busca e localização — Alta | Quais países e localidades a busca deve cobrir, quais formatos deve aceitar e como diferenciar cidades homônimas? | Usuários podem não encontrar uma cidade ou consultar dados de uma localidade incorreta. |
+| Clima atual — Alta | Quais campos definem o clima atual e qual idade máxima dos dados ainda será considerada atual? | A tela pode omitir informações esperadas ou apresentar dados antigos como atuais. |
+| Previsão — Alta | Os cinco dias incluem hoje? A previsão será diária, horária ou ambas, e em qual fuso horário serão apresentados dias e horários? | O período e a interpretação da previsão podem divergir do esperado, afetando dados, interface e testes de aceite. |
+| Unidades — Alta | Celsius ou Fahrenheit será a unidade inicial? A troca afeta todas as temperaturas, como será feito o arredondamento e a preferência será preservada? | A interface pode misturar unidades ou perder a escolha do usuário entre telas e sessões. |
+| Falhas e conectividade — Alta | Como o app deve agir sem resultados, em timeout, indisponibilidade do provedor ou perda de conexão? Pode exibir dados em cache e como sinaliza sua idade? | Falhas podem deixar a experiência sem orientação ou levar o usuário a confiar em uma previsão desatualizada. |
+| Qualidade operacional — Alta | As metas propostas de desempenho (95% em até 3 s) e disponibilidade (99,5% ao mês) são aceitáveis? Sob quais condições e limites do provedor serão medidas? | Não haverá critério objetivo para avaliar rapidez e confiabilidade, nem para alinhar compromissos com a dependência externa. |
+| Acessibilidade — Média | WCAG 2.2 nível AA é o padrão esperado? Quais tecnologias assistivas e idiomas/localidades devem ser cobertos? | Barreiras de uso e problemas de conformidade podem ser descobertos tarde, exigindo retrabalho na interface e nos testes. |
+
+As metas numéricas e prioridades registradas neste discovery são hipóteses para discussão; devem ser validadas com as partes interessadas antes de se tornarem critérios de aceite.
 
 ## Suposições
 
