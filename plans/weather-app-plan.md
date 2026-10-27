@@ -2,19 +2,23 @@
 
 ## Architecture
 
-Aplicação React de página única, sem backend próprio. A interface aciona operações de busca e consulta; os serviços isolam a comunicação com o Open-Meteo e normalizam as respostas; hooks coordenam as operações e mantêm o estado apresentado pela UI.
+Aplicação React de página única, sem backend próprio, organizada em camadas pequenas com dependências direcionadas para dentro. A composição da tela conecta apresentação, estado/orquestração, serviços e funções puras:
 
 ```text
-UI (App e components)
-        ↕
-Hooks (busca, consulta e estado da tela)
-        ↕
-Services (Geocoding e Forecast; validação e normalização)
-        ↕
-Open-Meteo (Geocoding API e Forecast API)
+App
+└── components ──> hooks ──> services ──> Open-Meteo
+       │              │          │
+       └──────────────┴──────────┴──> lib (funções puras)
+                                      types (contratos compartilhados)
 ```
 
-Os componentes não conhecem URLs nem fazem chamadas de rede. Funções puras em `lib/` ficam responsáveis por conversão, arredondamento e formatação. Essa separação atende RF-01 a RF-08 e permite testar a interface sem depender de chamadas reais.
+- **`components/` — apresentação:** componentes funcionais renderizam dados e estados, expõem controles acessíveis e emitem eventos por callbacks. Não contêm chamadas HTTP nem regras de transformação meteorológica; componentes de apresentação podem receber dados via props e o componente de tela pode consumir o hook.
+- **`hooks/` — orquestração e estado:** coordenam busca, seleção de cidade e consulta meteorológica; controlam estados de loading, sucesso, vazio e erro, concorrência/timeout e unidade selecionada. Chamam `services/` e entregam à UI estado e ações, sem conhecer detalhes de URL ou formato bruto da API.
+- **`services/` — acesso a dados:** encapsulam `fetch`, parâmetros e endpoints Open-Meteo, verificam erros HTTP/resposta e traduzem payloads externos para os contratos da aplicação. Não dependem de React nem renderizam UI; usam funções puras de `lib/` quando houver transformação reutilizável.
+- **`lib/` — funções puras:** contém conversão e arredondamento de temperatura, formatação de datas/horas, mapeamento de códigos WMO e transformação/validação determinística de dados quando útil. Não faz I/O, não mantém estado e não depende de React.
+- **`types/` — contratos:** define os tipos normalizados compartilhados, como `City`, `CurrentWeather`, `ForecastDay`, `WeatherData` e `Unit`. Não importa camadas de execução.
+
+`App.tsx` compõe o fluxo e `main.tsx` inicializa React. O fluxo de dependência não forma ciclos: components → hooks → services → lib; tipos são compartilhados sem importar implementação. Isso mantém detalhes da API fora da UI e permite substituir dependências por mocks nos testes.
 
 ## Tech Stack
 
@@ -27,26 +31,45 @@ Os componentes não conhecem URLs nem fazem chamadas de rede. Funções puras em
 
 ## Project Structure
 
-Manter a estrutura simples já documentada no `README.md`:
+Manter a estrutura simples já documentada no `README.md`, acrescentando arquivos focados por responsabilidade à medida que forem necessários:
 
 ```text
 src/
-├── components/      # Apresentação; subcomponentes focados
-│   └── states/      # Estados visuais de loading, erro e vazio
-├── hooks/           # Orquestração do fluxo e estado da tela
-├── services/        # Chamadas Open-Meteo, validação e normalização
-├── lib/             # Conversão, formatação e mapeamento de códigos WMO
-├── types/           # Contratos compartilhados
-├── styles/          # Estilos globais e configuração visual
-├── App.tsx          # Composição da tela
-└── main.tsx         # Inicialização React
+├── components/
+│   ├── SearchForm.tsx       # Entrada e confirmação de busca
+│   ├── CityResults.tsx      # Lista e seleção de cidades
+│   ├── CurrentWeather.tsx   # Condições atuais
+│   ├── ForecastList.tsx     # Dias e detalhes horários
+│   └── states/              # Loading, erro e vazio
+├── hooks/
+│   └── useWeather.ts        # Estado e orquestração principal
+├── services/
+│   ├── geocodingService.ts  # Busca de cidades
+│   └── forecastService.ts   # Consulta do clima e previsão
+├── lib/
+│   ├── weatherCodes.ts     # Código WMO → descrição
+│   ├── temperature.ts      # Conversão e arredondamento
+│   └── dateTime.ts         # Formatação no fuso local
+├── types/
+│   └── weather.ts          # Contratos compartilhados
+├── styles/                 # Tailwind e estilos globais
+├── App.tsx                 # Composição da página
+└── main.tsx                # Inicialização React
 
 tests/
-├── unit/            # Testes Vitest; comportamento observável
-└── e2e/             # Fluxos de usuário Playwright
+├── unit/                    # Vitest e Testing Library
+└── e2e/                     # Playwright
 ```
 
-O hook coordena as operações; os serviços cuidam do acesso a dados; componentes apresentam os resultados e estados. Essa divisão segue a arquitetura existente e evita introduzir camadas adicionais sem necessidade.
+Os nomes são uma proposta, não uma exigência para criar todos os arquivos antecipadamente. Cada componente fica em seu próprio arquivo; extrair novos módulos apenas quando uma responsabilidade concreta exigir, sem adicionar repositórios, adaptadores ou gerenciadores globais de estado nesta versão.
+
+### Testabilidade por camada
+
+- **`lib/`:** testes unitários puros com entradas e saídas explícitas; cobrem conversão/arredondamento, códigos WMO, datas/fusos e normalização de casos parciais sem DOM ou rede.
+- **`services/`:** testes com `fetch` mockado e fixtures JSON para validar parâmetros, mapeamento, respostas inválidas, erros HTTP e timeout, sem chamadas reais ao provedor.
+- **`hooks/`:** testes de integração com os serviços mockados para verificar transições de estado, seleção, retry e descarte de respostas tardias.
+- **`components/`:** testes com Testing Library focados em comportamento observável, roles/labels e interações; os dados podem ser passados como props ou fornecidos por hooks substituídos no limite do componente.
+- **Fluxo completo:** Playwright intercepta as requisições com fixtures e valida o percurso de busca a previsão, incluindo viewport mobile. Assim, os E2E verificam a integração das camadas sem depender da disponibilidade da API externa.
 
 ## Data Model
 
