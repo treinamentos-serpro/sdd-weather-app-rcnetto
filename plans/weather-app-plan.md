@@ -161,6 +161,27 @@ Temperaturas são mantidas em Celsius e convertidas apenas para apresentação c
 6. A pessoa pode expandir qualquer um dos cinco dias para consultar os pontos horários daquele dia local (RF-03). A alternância °C/°F converte os dados já carregados, sem nova requisição (RF-04).
 7. A idade da observação é calculada em relação ao relógio atual em UTC; horários de apresentação são formatados em pt-BR e no fuso IANA da cidade (RF-05, RNF-07).
 
+### Diagrama de fluxo
+
+```mermaid
+flowchart TD
+    A[Pessoa informa e confirma a busca] --> B{Termo válido?}
+    B -- Não --> C[Orientar correção; não enviar request]
+    B -- Sim --> D[Geocoding service]
+    D -- Falha de rede, API ou timeout --> E[Hook: estado error]
+    D -- Resposta sem cidades --> F[Hook: estado empty]
+    D -- Cidades encontradas --> G[Pessoa seleciona uma cidade]
+    G --> H[Forecast service]
+    H -- Falha de rede, API ou timeout --> E
+    H -- Nenhum dado utilizável --> F
+    H -- Dados válidos ou parciais --> I[Hook: estado success]
+    E --> J[Componentes de UI: erro e retry]
+    F --> K[Componentes de UI: estado vazio]
+    I --> L[Componentes de UI: clima e previsão]
+    J -- Retry da operação --> D
+    J -- Retry da cidade selecionada --> H
+```
+
 ## External APIs
 
 Usar somente os serviços oficiais definidos na spec. Não configurar chave nesta versão; revisar termos, limites e atribuição antes da publicação.
