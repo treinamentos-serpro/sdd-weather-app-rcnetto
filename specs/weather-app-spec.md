@@ -27,21 +27,23 @@ Questions.
 ## Functional Requirements
 
 - **RF-01 — Pesquisar e selecionar cidades:** a pessoa usuária deve poder
-  pesquisar cidades em qualquer país por nome completo ou parcial. A busca
-  deve ignorar diferenças entre maiúsculas/minúsculas e acentos. Cada resultado
-  deve identificar a cidade, a região/estado quando disponível e o país, para
-  ajudar a distinguir localidades homônimas. A pessoa deve poder selecionar um
-  resultado para consultar seu clima.
+  pesquisar cidades em qualquer país por nome completo ou parcial. Antes da
+  busca, espaços no início e no fim são removidos; a correspondência ignora
+  maiúsculas/minúsculas e acentos, mas não corrige erros de digitação. Cada
+  resultado identifica cidade, país e região/estado quando disponível. A
+  seleção deve manter a identidade exata da localidade retornada, inclusive
+  quando há cidades homônimas.
 - **RF-02 — Consultar condições atuais:** para a cidade selecionada, o produto
   deve apresentar em português a condição do tempo, temperatura atual, sensação
   térmica, máxima e mínima do dia local, umidade em porcentagem e velocidade do
-  vento em km/h.
+  vento em km/h. Todas as temperaturas devem indicar a unidade apresentada.
 - **RF-03 — Consultar previsão diária e horária:** para a cidade selecionada,
   o produto deve apresentar para hoje e os quatro dias seguintes um resumo com
   condição do tempo e temperaturas máxima e mínima. Deve ser possível consultar
   sob demanda detalhes por hora, incluindo horário local, condição do tempo e
   temperatura. As descrições devem ser apresentadas em português; datas e
-  horários devem corresponder ao fuso horário local da cidade.
+  horários devem corresponder ao fuso horário local da cidade, inclusive nas
+  mudanças de horário sazonal.
 - **RF-04 — Alternar unidade de temperatura:** a pessoa usuária deve poder
   alternar entre Celsius e Fahrenheit. Celsius é a unidade inicial. A seleção
   vale até o recarregamento da página ou o início de uma nova visita, não sendo
@@ -49,15 +51,17 @@ Questions.
   atual, da previsão diária e dos detalhes horários, com arredondamento para o
   grau inteiro mais próximo.
 - **RF-05 — Informar atualização dos dados:** o produto deve informar o horário
-  de atualização fornecido pela fonte de dados, exibido no fuso local da cidade,
-  e sinalizar dados cuja idade exceda 60 minutos. Uma resposta bem-sucedida com
-  dados antigos pode ser exibida somente com indicação explícita de
-  desatualização.
+  de referência/atualização fornecido pela fonte, em fuso local da cidade, e
+  sinalizar dados cuja idade exceda 60 minutos. A idade deve ser calculada em
+  relação ao relógio atual em UTC. Uma resposta bem-sucedida com dados antigos
+  pode ser exibida somente com indicação explícita de desatualização. Timestamp
+  ausente ou inválido não pode ser apresentado como recente.
 - **RF-06 — Tratar indisponibilidade e permitir nova tentativa:** diante de
   falha de conexão, erro da API ou timeout na busca de cidades ou consulta
   meteorológica, o produto deve informar que não foi possível concluir a
-  operação e oferecer nova tentativa manual. O timeout ocorre após 10 segundos
-  sem resposta. Após uma falha, o produto não deve usar dados em cache como se
+  operação e oferecer nova tentativa manual da mesma operação, preservando a
+  consulta ou cidade selecionada. O timeout ocorre após 10 segundos sem
+  resposta. Após uma falha, o produto não deve usar dados em cache como se
   fossem atuais.
 - **RF-07 — Comunicar estados de consulta:** enquanto uma busca de cidade ou
   consulta meteorológica estiver em andamento, o produto deve indicar que está
@@ -113,11 +117,12 @@ identifica o requisito funcional que valida.
 
 #### Cenário: buscar por nome completo ou parcial
 
-- **Given:** o catálogo de teste contém cidades em mais de um país e uma delas
-  tem o nome "São Paulo"
-- **When:** a pessoa pesquisa "São Paulo" e, em outra consulta, "São"
-- **Then:** ambas as consultas retornam as cidades correspondentes existentes
-  no catálogo, identificando cidade, país e região/estado quando disponível
+- **Given:** o catálogo controlado contém dois resultados de fixture chamados
+  "São Paulo" em países distintos e um resultado "Santo André"
+- **When:** a pessoa pesquisa "São Paulo" e depois "São"
+- **Then:** a busca exata inclui as duas localidades chamadas "São Paulo"; a
+  busca parcial inclui as localidades cujo nome contém "São", sem incluir
+  nomes que não correspondam, e cada resultado identifica cidade e país
 
 #### Cenário: ignorar diferenças de acentuação e capitalização
 
@@ -136,10 +141,17 @@ identifica o requisito funcional que valida.
 #### Cenário: consultar o clima da cidade selecionada
 
 - **Given:** os resultados incluem duas localidades distintas e há respostas
-  meteorológicas controladas para ambas
+  meteorológicas controladas com valores diferentes para ambas
 - **When:** a pessoa seleciona uma das localidades
-- **Then:** o produto exibe os dados associados à localidade selecionada, não
-  os dados da outra localidade
+- **Then:** o produto consulta e exibe somente os dados associados ao
+  identificador da localidade selecionada
+
+#### Cenário: manter somente os resultados da busca mais recente
+
+- **Given:** a pessoa envia a busca A e, antes de sua resposta, envia a busca B
+- **When:** a resposta de B chega antes da resposta de A
+- **Then:** a lista exibe os resultados de B e a resposta tardia de A não
+  substitui nem mistura os resultados de B
 
 #### Cenário: impedir busca vazia
 
@@ -147,6 +159,12 @@ identifica o requisito funcional que valida.
 - **When:** a pessoa tenta pesquisar
 - **Then:** nenhuma solicitação de geocoding é enviada e a interface solicita
   um nome de cidade, mantendo o campo disponível para edição
+
+#### Cenário: remover espaços externos do termo
+
+- **Given:** o catálogo controlado contém a cidade "Lisboa"
+- **When:** a pessoa pesquisa "  Lisboa  "
+- **Then:** a busca retorna o mesmo conjunto de resultados de "Lisboa"
 
 #### Cenário: pesquisar nomes com pontuação legítima
 
@@ -205,10 +223,13 @@ identifica o requisito funcional que valida.
 #### Cenário: apresentar datas e horários no fuso da cidade
 
 - **Given:** o fuso local da cidade difere do fuso do dispositivo e os dados
-  controlados incluem datas e horas nos dois fusos
+  controlados incluem um instante próximo à meia-noite e datas de transição
+  sazonal de fuso
 - **When:** a pessoa consulta a previsão
 - **Then:** as datas e horas exibidas correspondem ao fuso local da cidade e
-  "hoje" corresponde à data local da cidade
+  "hoje" corresponde à data local da cidade; horas inexistentes não são
+  inventadas e horários locais repetidos são distinguidos pelo instante
+  correspondente
 
 ### AC-RF-04 — Alternar unidade de temperatura
 
@@ -241,13 +262,20 @@ identifica o requisito funcional que valida.
 - **When:** a pessoa alterna entre Celsius e Fahrenheit
 - **Then:** cada temperatura corresponde à conversão da resposta original
   para a unidade selecionada, arredondada para o grau inteiro mais próximo, com
-  empates de 0,5 arredondados para longe de zero
+  empates de 0,5 arredondados para longe de zero, sem conversão cumulativa a
+  partir do valor já arredondado
 
 #### Cenário: restaurar Celsius ao recarregar ou iniciar nova visita
 
 - **Given:** a pessoa selecionou Fahrenheit durante uma visita
 - **When:** recarrega a página ou inicia uma nova visita
 - **Then:** a unidade apresentada volta a ser Celsius
+
+#### Cenário: manter unidade ao trocar de cidade durante a visita
+
+- **Given:** a pessoa selecionou Fahrenheit e consultou uma cidade
+- **When:** seleciona uma segunda cidade durante a mesma visita
+- **Then:** as temperaturas da segunda cidade são exibidas em Fahrenheit
 
 ### AC-RF-05 — Informar atualização dos dados
 
@@ -269,8 +297,8 @@ identifica o requisito funcional que valida.
 #### Cenário: não sinalizar dados com até uma hora
 
 - **Given:** o relógio de teste está fixado e os dados têm idade igual ou
-  inferior ou igual a 60 minutos, calculada a partir do horário fornecido pela
-  fonte
+  inferior a 60 minutos, inclusive exatamente 60 minutos, calculada a partir
+  do horário fornecido pela fonte
 - **When:** os dados meteorológicos são apresentados
 - **Then:** a interface não exibe a indicação de dados desatualizados com base
   no limite de uma hora
@@ -283,6 +311,14 @@ identifica o requisito funcional que valida.
 - **Then:** os dados são exibidos com o horário da última atualização e a
   indicação explícita de que estão desatualizados
 
+#### Cenário: não declarar dados recentes sem timestamp válido
+
+- **Given:** a resposta não contém timestamp válido ou o timestamp está no
+  futuro em relação ao relógio de referência
+- **When:** a interface apresenta dados meteorológicos
+- **Then:** a interface identifica a atualização como indisponível e não
+  declara os dados recentes
+
 ### AC-RF-06 — Tratar indisponibilidade e permitir nova tentativa
 
 #### Cenário: informar falha de geocoding ou consulta meteorológica
@@ -290,23 +326,24 @@ identifica o requisito funcional que valida.
 - **Given:** a pessoa iniciou uma busca ou consulta meteorológica e a conexão
   falha ou o serviço responde com erro
 - **When:** a operação termina sem resposta bem-sucedida
-- **Then:** a interface informa que a operação falhou, oferece nova tentativa
-  manual e não apresenta a falha como uma busca sem resultados; após falha
-  meteorológica, não apresenta dados em cache como atuais
+- **Then:** a interface apresenta mensagem de erro em pt-BR e ação "Tentar
+  novamente"; a busca não é apresentada como vazia e, após falha meteorológica,
+  dados em cache não são apresentados como atuais
 
 #### Cenário: encerrar a busca após timeout
 
 - **Given:** uma busca de cidades permanece sem resposta
 - **When:** decorrem 10 segundos desde o envio da solicitação
 - **Then:** a busca é encerrada, a interface informa que a consulta demorou
-  demais e oferece nova tentativa
+  demais e oferece a ação "Tentar novamente"
 
 #### Cenário: encerrar a consulta meteorológica após timeout
 
 - **Given:** uma consulta meteorológica permanece sem resposta
 - **When:** decorrem 10 segundos desde o envio da solicitação
 - **Then:** a consulta é encerrada, a interface informa que a consulta demorou
-  demais, oferece nova tentativa e não apresenta dados em cache como atuais
+  demais, oferece a ação "Tentar novamente" e não apresenta dados em cache como
+  atuais
 
 #### Cenário: nova tentativa concluída com sucesso
 
@@ -321,8 +358,16 @@ identifica o requisito funcional que valida.
 - **Given:** uma busca de cidades falhou e a fonte está configurada para
   responder com sucesso à próxima solicitação
 - **When:** a pessoa aciona a nova tentativa
-- **Then:** a busca é enviada novamente e os resultados recebidos são
-  apresentados
+- **Then:** a mesma consulta de busca é enviada novamente e os resultados
+  recebidos são apresentados
+
+#### Cenário: ignorar resposta tardia após timeout
+
+- **Given:** uma solicitação atingiu o timeout e uma nova tentativa foi iniciada
+- **When:** a resposta da solicitação expirada chega depois da resposta da nova
+  tentativa
+- **Then:** a resposta expirada não substitui nem altera os resultados mais
+  recentes
 
 #### Cenário: nova tentativa também falha
 
@@ -405,97 +450,89 @@ identifica o requisito funcional que valida.
 - **Then:** a interface informa que não há dados meteorológicos disponíveis e
   oferece nova tentativa
 
-## Decisões esclarecidas — perguntas e respostas
+#### Cenário: tratar valor ausente ou inválido como indisponível
 
-- **Pergunta:** O que fazer com dados recebidos com mais de uma hora?
-  **Resposta:** Exibi-los com o horário de atualização e um aviso explícito de
-  desatualização. Não usar dados em cache após falha de API ou conexão.
-- **Pergunta:** Como tratar respostas meteorológicas parciais?
-  **Resposta:** Exibir cada campo recebido e marcar ausentes como
-  indisponíveis. Sem temperatura atual, indicar condições atuais indisponíveis,
-  mas preservar qualquer previsão utilizável.
-- **Pergunta:** A que período se referem máxima e mínima, e qual unidade usar
-  para umidade e vento?
-  **Resposta:** Máxima e mínima são do dia local; umidade é percentual e
-  velocidade do vento é apresentada em km/h.
-- **Pergunta:** Qual o limite para timeout e como tratar empates no
-  arredondamento de temperatura?
-  **Resposta:** Encerrar consultas sem resposta após 10 segundos; arredondar
-  empates de 0,5 grau para longe de zero.
+- **Given:** a resposta contém temperatura nula, umidade fora do intervalo
+  inclusivo de 0 a 100% ou velocidade do vento negativa
+- **When:** a resposta é apresentada
+- **Then:** somente esse campo é identificado como indisponível, sem exibir ou
+  inferir um valor substituto
+
+#### Cenário: tratar resposta meteorológica ilegível
+
+- **Given:** o serviço responde com sucesso HTTP, mas o corpo não pode ser
+  interpretado como uma resposta meteorológica válida
+- **When:** a aplicação processa a resposta
+- **Then:** a consulta é tratada como falha, os dados inválidos não são exibidos
+  e a pessoa recebe uma mensagem de erro com opção de nova tentativa
 
 ## Non-Functional Requirements
 
-As metas quantitativas abaixo são propostas iniciais do discovery e dependem de
-validação das partes interessadas. Não devem ser tratadas como compromissos
-aprovados até que as questões correspondentes sejam respondidas.
+As metas identificadas como propostas são critérios candidatos, não compromissos
+de produção aprovados. As questões de disponibilidade, desempenho, plataformas,
+acessibilidade e usabilidade devem ser resolvidas antes do lançamento.
 
 - **RNF-01 — Responsividade:** as funcionalidades principais devem ser
-  utilizáveis em larguras de tela de 320 px a 1440 px, sem rolagem horizontal.
-  A matriz de dispositivos e navegadores suportados ainda precisa ser definida.
-- **RNF-02 — Usabilidade:** em testes com usuários representativos, pelo menos
-  90% devem conseguir pesquisar uma cidade, consultar o clima atual e visualizar
-  a previsão sem ajuda. Público de teste e protocolo precisam ser acordados.
-- **RNF-03 — Desempenho:** em condições de rede e disponibilidade do provedor
-  que ainda serão definidas, 95% das buscas e consultas meteorológicas devem
-  apresentar os resultados em até três segundos.
-- **RNF-04 — Disponibilidade e resiliência:** a meta inicial é disponibilidade
-  mensal de 99,5%. Falhas de rede ou do provedor devem ser comunicadas, oferecer
-  nova tentativa manual e não fazer dados desatualizados parecerem atuais.
-- **RNF-05 — Acessibilidade:** a interface deve atender ao nível AA da WCAG
-  2.2, incluindo operação por teclado e compatibilidade com leitores de tela.
-  As tecnologias assistivas a cobrir nos testes precisam ser confirmadas.
-- **RNF-06 — Atualidade dos dados:** a interface deve informar o horário da
-  última atualização e sinalizar dados com mais de uma hora, conforme RF-05.
-- **RNF-07 — Idioma:** a interface deve ser apresentada em português do Brasil.
+  utilizáveis em larguras CSS de 320, 375, 768, 1024 e 1440 px, sem rolagem
+  horizontal. Em cada largura, deve ser possível concluir busca, seleção,
+  consulta, alternância de unidade e abertura dos detalhes horários.
+- **RNF-02 — Usabilidade (proposta):** em teste moderado com participantes do
+  público geral, pelo menos 90% devem completar sem ajuda a busca de uma cidade,
+  a consulta atual e a leitura da previsão de cinco dias. O tamanho da amostra e
+  o protocolo devem ser aprovados antes do teste.
+- **RNF-03 — Desempenho (proposta):** no perfil de rede e disponibilidade do
+  provedor a ser aprovado, pelo menos 95% de cada tipo de operação bem-sucedida
+  (geocoding e consulta meteorológica) deve apresentar resultado em até 3
+  segundos, medidos da ação da pessoa até o conteúdo correspondente ficar
+  visível. O timeout de 10 segundos é o limite máximo para encerrar cada
+  operação, não a meta de desempenho.
+- **RNF-04 — Disponibilidade e resiliência (proposta):** a meta inicial é
+  disponibilidade mensal de 99,5%. A disponibilidade da aplicação e a
+  disponibilidade de dados meteorológicos devem ser medidas separadamente.
+  Falhas devem ser identificadas como falhas, permitir nova tentativa manual e
+  não apresentar cache como dado atual.
+- **RNF-05 — Acessibilidade:** a interface deve atender WCAG 2.2 nível AA.
+  Os fluxos de busca, seleção, consulta, alternância de unidade e nova tentativa
+  devem ser concluíveis somente por teclado, sem armadilha de foco e com foco
+  visível; controles devem ter nomes acessíveis e estados de carregamento, vazio
+  e erro devem ser anunciados por tecnologia assistiva. Contraste e demais
+  critérios AA devem ser verificados por avaliação automatizada e revisão
+  manual.
+- **RNF-06 — Atualidade dos dados:** a indicação e o limite de 60 minutos
+  seguem RF-05. Timestamp ausente, inválido ou no futuro não deve resultar em
+  indicação de dado recente; deve ser comunicado como horário indisponível.
+- **RNF-07 — Idioma e formatação:** textos, descrições de condição, datas,
+  horários e números devem ser apresentados em português do Brasil. Datas
+  seguem o formato DD/MM/AAAA e horas o formato de 24 horas, ambos no fuso local
+  da cidade. Valores de temperatura mostram °C ou °F, umidade mostra %, e vento
+  mostra km/h.
+- **RNF-08 — Privacidade:** nenhuma conta ou dado de usuário deve ser persistido
+  no servidor. A localização consultada é enviada ao provedor para busca ou
+  previsão; retenção pelo provedor, telemetria e armazenamento local estão
+  sujeitos às decisões pendentes em Open Questions e não devem ser ativados
+  antes da aprovação de privacidade.
 
 ## Edge Cases
 
-- **Cidade inexistente:** quando a pessoa informa o nome de uma cidade que não
-  existe ou não pode ser identificada, a aplicação informa que não encontrou a
-  cidade, não inicia uma consulta meteorológica para uma localidade não
-  selecionada e permite corrigir a busca.
-- **Input vazio:** quando a pessoa tenta pesquisar sem informar texto ou
-  informa apenas espaços, a aplicação não envia uma consulta de geocoding,
-  solicita um nome de cidade e mantém o campo disponível para edição.
-- **Caracteres especiais:** a aplicação aceita pontuação válida em nomes de
-  localidades (por exemplo, hífen ou apóstrofo) e pesquisa o texto como dado
-  literal, sem executar ou interpretar caracteres como comandos. Se o texto
-  contiver caracteres de controle, a aplicação rejeita a busca e informa que o
-  texto não é válido.
-- **Geocoding sem resultados:** quando o serviço de busca responde com sucesso,
-  mas retorna zero localidades, a aplicação informa que nenhuma cidade foi
-  encontrada, não apresenta isso como falha de conexão e permite ajustar a
-  busca.
-- **Falha de API:** quando a consulta de geocoding ou meteorológica falha, a
-  aplicação informa que não foi possível concluir a consulta, oferece nova
-  tentativa manual e não apresenta a falha como uma busca sem resultados. Para
-  falha meteorológica, não apresenta dados antigos como atuais.
-- **Timeout:** quando o serviço não responde dentro do limite de espera
-  de 10 segundos, a aplicação encerra a espera, informa que a consulta demorou
-  demais e oferece nova tentativa manual. Não apresenta dados antigos como
-  atuais.
-- **Resposta meteorológica parcial:** quando uma resposta válida contém alguns
-  campos ou dias ausentes, a aplicação apresenta os campos e dias disponíveis,
-  indica como indisponíveis os campos ou dias sem dados e não inventa valores
-  nem substitui datas ausentes por dados de outro período. Se não houver dados
-  utilizáveis, informa que não foi possível obter os dados e oferece nova
-  tentativa.
-- A cidade pesquisada possui o mesmo nome de outras localidades; região/estado
-  pode estar ausente em alguns resultados.
-- O texto de busca tem diferenças de acentuação ou capitalização em relação ao
-  nome cadastrado.
-- A pessoa seleciona uma localidade para a qual a fonte não oferece dados
-  meteorológicos atuais ou previsão completa.
-- A conexão ou o Open-Meteo está indisponível durante a busca, a consulta atual,
-  a previsão ou uma nova tentativa.
-- A resposta disponível tem mais de uma hora; ela deve ser sinalizada como
-  desatualizada e não deve ser apresentada como atual sem essa indicação.
-- Uma consulta ocorre perto da mudança de data local da cidade ou em cidade
-  cujo fuso difere do dispositivo; datas e horários devem continuar coerentes
-  com o fuso local da cidade.
-- A pessoa alterna a unidade enquanto o clima atual, a previsão diária e os
-  detalhes horários estão visíveis; todos os valores devem continuar
-  consistentes.
+- **Entrada de busca:** texto vazio ou só espaços não gera solicitação; pontuação
+  legítima é pesquisada literalmente; caracteres de controle são rejeitados.
+- **Busca sem resultado ou falha:** zero resultados é estado vazio; erro de API,
+  conexão ou timeout é estado de falha. Não iniciar previsão sem localidade
+  selecionada; permitir nova tentativa em falhas.
+- **Resultados concorrentes:** uma resposta tardia de uma consulta anterior não
+  pode substituir resultados de uma busca mais recente.
+- **Localidade ambígua:** distinguir homônimos com país e, quando disponível,
+  região/estado; selecionar uma localidade não pode carregar dados de outra.
+- **Dados incompletos ou inválidos:** marcar individualmente campos e dias
+  ausentes ou inválidos; não inventar dados, deslocar datas ou tratar falha de
+  parsing como resposta válida.
+- **Dados desatualizados:** resposta bem-sucedida com idade superior a 60
+  minutos pode ser exibida com aviso; após falha não usar cache como dado atual.
+- **Fuso e calendário:** usar a data e hora locais da cidade, inclusive em
+  mudança de dia e de horário sazonal; não inventar horas inexistentes e
+  distinguir horários locais repetidos.
+- **Alternância de unidade:** atualizar todas as temperaturas disponíveis sem
+  recalcular a partir de valores já arredondados.
 
 ## Assumptions
 
@@ -524,8 +561,9 @@ aprovados até que as questões correspondentes sejam respondidas.
 - Ausência de cadastro e persistência de servidor não define se haverá
   armazenamento local no navegador, telemetria ou retenção de registros pelo
   provedor; esses pontos precisam de validação de privacidade.
-- Personas, limites de tempo de uso, estimativas de risco e metas numéricas do
-  discovery são hipóteses, não resultados de pesquisa ou compromissos aprovados.
+- As metas de sucesso de usabilidade, latência e disponibilidade são propostas
+  até aprovação explícita; o timeout de 10 segundos e o limite de atualização
+  de 60 minutos são decisões adotadas nesta especificação.
 
 ## Risks
 
@@ -557,24 +595,17 @@ aprovados até que as questões correspondentes sejam respondidas.
 
 ## Open Questions
 
-1. **Métrica de sucesso de negócio — prioridade alta:** qual métrica indicará
-   que o aplicativo atende ao público geral (por exemplo, consultas concluídas,
-   retorno de usuários ou satisfação)?
-2. **Integração e dados — prioridade alta:** quais endpoints e campos do
-   Open-Meteo serão necessários e quais são as condições de cobertura, limites,
-   licença e atribuição aplicáveis?
-3. **Desempenho e disponibilidade — prioridade alta:** as metas propostas de
-   95% das buscas e consultas em até três segundos e disponibilidade mensal de
-   99,5% são aceitáveis? Sob quais condições de rede e limites do provedor serão
-   medidas?
-4. **Plataforma — prioridade média:** quais navegadores, dispositivos e
-   larguras de tela, além do intervalo inicial de 320 px a 1440 px, serão
-   oficialmente suportados?
-5. **Acessibilidade — prioridade média:** WCAG 2.2 nível AA é o padrão
-   esperado? Quais tecnologias assistivas devem ser cobertas nos testes?
-6. **Privacidade — prioridade média:** haverá telemetria ou armazenamento local
-   no navegador? Quais dados o provedor registra, por quanto tempo e sob quais
-   condições de consentimento e transparência?
-7. **Usabilidade — prioridade média:** qual público será considerado
-   representativo e qual protocolo validará a meta proposta de 90% de sucesso
-   sem ajuda?
+Os itens marcados como bloqueadores precisam ser aprovados antes do lançamento;
+as metas candidatas não constituem SLA ou aceite contratual até essa aprovação.
+
+| Prioridade | Pergunta | Necessária antes do lançamento |
+|---|---|---|
+| Crítica | Quais endpoints, campos e timestamps do Open-Meteo serão usados? A cobertura, unidades de origem, limites, licença e atribuição atendem ao produto? | Sim |
+| Alta | As metas candidatas de p95 ≤ 3 s e disponibilidade mensal de 99,5% são aprovadas? Qual perfil de rede, janela e fronteira de medição serão usados para separar disponibilidade da aplicação e dos dados? | Sim |
+| Alta | Quais navegadores e versões serão suportados? O intervalo de 320 a 1440 px é suficiente para os dispositivos-alvo? | Sim |
+| Alta | WCAG 2.2 AA é o requisito de lançamento? Quais combinações de leitor de tela, navegador e sistema operacional compõem a matriz de validação? | Sim |
+| Alta | Haverá telemetria ou armazenamento local? Quais dados o provedor retém, por quanto tempo e sob quais condições de transparência/consentimento? | Sim |
+| Média | Qual limite de resultados a busca deve exibir por consulta e como a pessoa acessará outros resultados, se houver mais? | Sim, se o provedor puder retornar resultados além do limite visível |
+| Alta | Qual período futuro os detalhes por hora devem cobrir (por exemplo, o dia selecionado ou toda a janela de previsão)? | Sim |
+| Média | Qual métrica de negócio avaliará sucesso após o lançamento (consultas concluídas, retorno ou satisfação) e qual será sua meta? | Não, mas antes de avaliar o resultado do produto |
+| Média | Qual amostra e protocolo serão usados para validar a meta candidata de 90% de conclusão sem ajuda? | Sim, antes de usar a meta como aceite |
