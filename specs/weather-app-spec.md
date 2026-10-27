@@ -40,11 +40,12 @@ Questions.
 - **RF-02 — Consultar condições atuais:** para a cidade selecionada, o produto
   deve apresentar em português a condição do tempo, temperatura atual, sensação
   térmica, máxima e mínima do dia local, umidade em porcentagem e velocidade do
-  vento em km/h. Todas as temperaturas devem indicar a unidade apresentada.
+  vento em km/h, precipitação atual em mm e pressão de superfície em hPa.
+  Todas as temperaturas devem indicar a unidade apresentada.
 - **RF-03 — Consultar previsão diária e horária:** para a cidade selecionada,
   o produto deve apresentar para hoje e os quatro dias seguintes um resumo com
-  condição do tempo e temperaturas máxima e mínima. Deve ser possível consultar
-  sob demanda os detalhes por hora de cada dia exibido, incluindo horário
+  condição do tempo, temperaturas máxima e mínima e probabilidade máxima diária
+  de chuva em porcentagem. Deve ser possível consultar sob demanda os detalhes por hora de cada dia exibido, incluindo horário
   local, condição do tempo e temperatura. As descrições devem ser apresentadas
   em português; datas e horários devem corresponder ao fuso horário local da
   cidade, inclusive nas mudanças de horário sazonal.
@@ -226,23 +227,25 @@ identifica o requisito funcional que valida.
 
 - **Given:** a pessoa selecionou uma cidade e a resposta controlada contém
   condição, temperatura atual, sensação térmica, máxima e mínima do dia local,
-  umidade e velocidade do vento
+  umidade, velocidade do vento, precipitação e pressão de superfície
 - **When:** a consulta meteorológica termina com sucesso
-- **Then:** a interface exibe os sete indicadores com os valores da resposta,
+- **Then:** a interface exibe todos os indicadores com os valores da resposta,
   máximas e mínimas referentes ao dia local, descrição da condição em
-  português, umidade em porcentagem e velocidade do vento em km/h
+  português, umidade em porcentagem, vento em km/h, precipitação em mm e
+  pressão de superfície em hPa
 
 ### AC-RF-03 — Consultar previsão diária e horária
 
 #### Cenário: exibir os cinco dias da previsão
 
 - **Given:** a pessoa selecionou uma cidade e a resposta controlada contém a
-  previsão diária de hoje e dos quatro dias seguintes, com condição, máxima e
-  mínima para cada dia no fuso local da cidade
+  previsão diária de hoje e dos quatro dias seguintes, com condição, máxima,
+  mínima e probabilidade máxima de chuva para cada dia no fuso local da cidade
 - **When:** a consulta meteorológica termina com sucesso
 - **Then:** a interface exibe exatamente cinco resumos diários, identificados
   pelas datas locais de hoje até o quarto dia seguinte, cada um com a condição
-  em português e temperaturas máxima e mínima
+  em português, temperaturas máxima e mínima e probabilidade máxima de chuva
+  diária em porcentagem
 
 #### Cenário: consultar detalhes por hora
 
@@ -263,6 +266,15 @@ identifica o requisito funcional que valida.
   "hoje" corresponde à data local da cidade; horas inexistentes não são
   inventadas e horários locais repetidos são distinguidos pelo instante
   correspondente
+
+#### Cenário: métricas adicionais parciais (P6.4/P6.5)
+
+- **Given:** precipitação atual, pressão de superfície ou probabilidade diária
+  de chuva está ausente ou inválida
+- **When:** o painel e os resumos diários são apresentados
+- **Then:** somente cada métrica ausente é indicada como indisponível; zero é
+  um valor válido. Precipitação deve ser finita e não negativa, pressão finita
+  e positiva e probabilidade finita entre 0 e 100, inclusive.
 
 ### AC-RF-04 — Alternar unidade de temperatura
 

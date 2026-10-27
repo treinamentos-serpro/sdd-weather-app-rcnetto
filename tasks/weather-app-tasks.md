@@ -8,6 +8,12 @@ a uma unidade testável, indica arquivos prováveis e apresenta critérios
 verificáveis. Os requisitos listados são a rastreabilidade primária; cenários
 relacionados da spec também se aplicam.
 
+Rastreabilidade da entrega de UI: **P6.3** → T-22 + T-04/T-28;
+**P6.4** → T-18/T-42 + T-05/T-29;
+**P6.5** → T-20/T-44 + T-06 (datas civis); teclado/unidades → T-46.
+Componentes e testes desta fatia são standalone; rede/hooks, estados assíncronos,
+expansão horária (T-21) e integração App (P6.7/T-26) permanecem futuros.
+
 ## Entrega 1 — Tipos e fundação
 
 ### T-01 — Criar composição e entrada React
@@ -40,7 +46,10 @@ relacionados da spec também se aplicam.
   serviços.
 - **Critérios de aceite:**
   - O módulo exporta `Unit`, `City`, `CurrentWeather`, `HourlyForecast`,
-    `ForecastDay` e `WeatherData` com os campos definidos no plano.
+    `ForecastDay` e `WeatherData` com os campos definidos no plano, incluindo
+    `current.precipitationMm`,
+    `current.pressureHpa` (superfície) e
+    `ForecastDay.precipitationProbabilityPercent`, todos `number | null`.
   - Valores de dados opcionais/incertos são representáveis sem valores
     substitutos, e o módulo não importa React nem serviços.
   - `pnpm build` passa em modo TypeScript strict.
@@ -48,6 +57,11 @@ relacionados da spec também se aplicam.
 - **Arquivos prováveis:** `src/types/weather.ts`.
 - **Tipo:** Data
 - **Requisitos:** RF-01, RF-02, RF-03, RF-08.
+
+A fixture determinística deve incluir precipitação mm ≥ 0, pressão de superfície
+hPa > 0 e probabilidade diária de chuva entre 0 e 100 %, preservando datas e horas.
+Na normalização futura, validar esses domínios e finitude por campo (T-09/T-12);
+valores inválidos viram `null`, nunca zero inventado.
 
 ## Entrega 2 — Funções puras
 
@@ -272,7 +286,8 @@ relacionados da spec também se aplicam.
 - **Descrição:** Renderizar os indicadores atuais e seus estados indisponíveis.
 - **Critérios de aceite:**
   - Quando presentes, são mostrados condição, temperatura, sensação térmica,
-    máxima/mínima do dia local, umidade e vento, com unidade.
+    máxima/mínima do dia local, umidade %, vento km/h, precipitação mm e
+    pressão de superfície hPa (P6.4, RF-02). Zeros são preservados.
   - Campo `null` é marcado como indisponível individualmente; sem temperatura
     atual, o painel informa que as condições atuais não estão disponíveis.
   - Condição usa descrição pt-BR e código desconhecido não recebe descrição
@@ -303,12 +318,17 @@ relacionados da spec também se aplicam.
   seus estados parciais.
 - **Critérios de aceite:**
   - A lista renderiza exatamente cinco dias, na ordem e com as datas recebidas.
-  - Cada cartão mostra condição e máxima/mínima; campos `null` são indicados
+  - Cada cartão mostra ícone decorativo, condição, máxima/mínima e probabilidade
+    máxima diária de chuva % (P6.5, RF-03); campos `null` são indicados
     como indisponíveis sem deslocar datas.
   - Descrições são em português e temperaturas incluem a unidade selecionada.
   - A previsão informa que seu horário de atualização não foi fornecido.
+  - Props: lista `forecastDays: ForecastDay[], unit: Unit`; cartão `day: ForecastDay, unit: Unit`.
+  - Grid `grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`, estado vazio e dia
+    totalmente indisponível explícitos; data estrita pt-BR, UTC explícito, sem
+    deslocamentos pelo fuso do dispositivo e sem Hoje inferido por índice.
 - **Dependências:** T-05, T-12
-- **Arquivos prováveis:** `src/components/ForecastList.tsx`.
+- **Arquivos prováveis:** `src/components/ForecastList.tsx`, `src/components/ForecastCard.tsx`.
 - **Tipo:** UI
 - **Requisitos:** RF-03, RF-08, RNF-07.
 
@@ -334,8 +354,10 @@ relacionados da spec também se aplicam.
   - O controle expõe as opções °C e °F com nome acessível e seleção
     programaticamente identificável.
   - Ativar cada opção chama callback com a unidade correspondente.
+  - P6.3: `UnitToggle({ unit, onChange })`, controlado sem estado duplicado,
+    dois botões num grupo com nome acessível e `aria-pressed`, Tab/Enter/Space.
 - **Dependências:** T-14
-- **Arquivos prováveis:** `src/components/TemperatureUnitToggle.tsx`.
+- **Arquivos prováveis:** `src/components/UnitToggle.tsx`.
 - **Tipo:** UI
 - **Requisitos:** RF-04, RNF-05.
 
@@ -611,7 +633,7 @@ relacionados da spec também se aplicam.
   indisponíveis.
 - **Critérios de aceite:**
   - Testing Library verifica cada indicador e suas unidades com dados
-    completos.
+    completos, incluindo precipitação mm, pressão de superfície hPa e zeros.
   - Teste com campos `null` confirma mensagens indisponíveis individuais e
     indisponibilidade geral quando falta temperatura atual.
 - **Dependências:** T-18
@@ -636,7 +658,8 @@ relacionados da spec também se aplicam.
 - **Descrição:** Verificar cinco datas na ordem e representação de campos
   diários ausentes.
 - **Critérios de aceite:**
-  - Testing Library valida exatamente cinco datas e conteúdo de cada cartão.
+  - Testing Library valida exatamente cinco datas e conteúdo de cada cartão,
+    probabilidade de chuva % (inclusive zero/nulo), lista vazia e rerender °C/°F.
   - Fixture com valores indisponíveis conserva a data do dia e sinaliza apenas
     os campos afetados.
   - Teste verifica a comunicação de que o horário de atualização da previsão

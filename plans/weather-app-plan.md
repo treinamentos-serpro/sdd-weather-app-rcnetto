@@ -111,6 +111,10 @@ export interface CurrentWeather {
   humidityPercent: number | null;
   /** Velocidade do vento em quilômetros por hora. */
   windSpeedKmh: number | null;
+  /** Precipitação atual em mm, finita e não negativa. */
+  precipitationMm: number | null;
+  /** Pressão de superfície em hPa, finita e positiva; não reduzida ao nível do mar. */
+  pressureHpa: number | null;
 }
 
 export interface HourlyForecast {
@@ -131,6 +135,8 @@ export interface ForecastDay {
   temperatureMaxC: number | null;
   /** Temperatura mínima diária em graus Celsius. */
   temperatureMinC: number | null;
+  /** Probabilidade máxima diária de chuva em %, finita entre 0 e 100. */
+  precipitationProbabilityPercent: number | null;
   /** Pontos horários da previsão pertencentes a este dia local. */
   hours: HourlyForecast[];
 }
@@ -150,6 +156,23 @@ export interface WeatherData {
 ```
 
 Temperaturas são mantidas em Celsius e convertidas apenas para apresentação conforme `Unit`, usando o valor original e arredondamento ao inteiro mais próximo; empates de 0,5 são arredondados para longe de zero. Isso evita divergências entre componentes e impede conversões sucessivas sobre valores já arredondados (RF-04). `weatherCode` é o código WMO retornado pela API; o mapeamento para descrições em português pertence à camada de apresentação/dominio. Não inferir horário de atualização da previsão a partir de horários de validade dos pontos previstos (RF-05).
+
+### Componentes de apresentação P6.3–P6.5
+
+- `UnitToggle({ unit, onChange })`: controlado, grupo de dois botões °C/°F
+  com `aria-pressed`, Tab/Enter/Space nativos, sem estado duplicado.
+- `CurrentWeather({ city, current, unit })`: hero, condição WMO com emoji
+  decorativo, sensação/máx/mín, umidade, vento, precipitação e pressão.
+- `ForecastList({ forecastDays, unit })` compõe `ForecastCard({ day, unit })`
+  em `grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`, sem expansão horária.
+- Helpers puros `temperature`, `weatherCodes`, `format`: conversão sempre do
+  Celsius original, todos os códigos WMO oficiais, data civil YYYY-MM-DD
+  estrita (sem normalizar datas inválidas), Intl pt-BR com UTC explícito para
+  preservar a data recebida independentemente do fuso do dispositivo. Não
+  rotular Hoje por índice; exibir DD/MM/AAAA.
+- Campos nulos são individualmente indisponíveis; lista vazia e dia totalmente
+  indisponível têm mensagem explícita. Sem rede, hooks ou integração em App
+  nesta entrega; integração permanece em P6.7/T-26.
 
 ## Data Flow
 
@@ -211,7 +234,9 @@ Usar somente os serviços oficiais definidos na spec. Não configurar chave nest
 
 - **Forecast**
   - **URL:** `https://api.open-meteo.com/v1/forecast`
-  - **Parâmetros:** `latitude` e `longitude` da cidade selecionada; `current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m`; `daily=weather_code,temperature_2m_max,temperature_2m_min`; `hourly=temperature_2m,weather_code`; `forecast_days=5`; `timezone=auto`; `temperature_unit=celsius`; `wind_speed_unit=kmh`.
+  - **Parâmetros:** `latitude` e `longitude` da cidade selecionada; `current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation,surface_pressure`; `daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max`; `hourly=temperature_2m,weather_code`; `forecast_days=5`; `timezone=auto`; `temperature_unit=celsius`; `wind_speed_unit=kmh`; `precipitation_unit=mm`. `current.precipitation` usa mm,
+    `current.surface_pressure` usa hPa (pressão na superfície, não `pressure_msl`) e
+    `daily.precipitation_probability_max` usa %.
   - Solicitar somente esses campos, manter as unidades normalizadas do modelo e não fazer atualização automática em segundo plano. `timezone=auto` faz a API devolver o identificador IANA e séries em horário local. Os arrays de cada granularidade são paralelos: os valores compartilham o índice correspondente ao item em `time`.
   - **Exemplo resumido de resposta:**
 
@@ -227,7 +252,9 @@ Usar somente os serviços oficiais definidos na spec. Não configurar chave nest
         "relative_humidity_2m": 48,
         "apparent_temperature": 22.1,
         "weather_code": 2,
-        "wind_speed_10m": 12.6
+        "wind_speed_10m": 12.6,
+        "precipitation": 0.2,
+        "surface_pressure": 1008.4
       },
       "hourly": {
         "time": ["2025-06-15T15:00", "2025-06-15T16:00"],
@@ -238,13 +265,14 @@ Usar somente os serviços oficiais definidos na spec. Não configurar chave nest
         "time": ["2025-06-15", "2025-06-16"],
         "weather_code": [2, 3],
         "temperature_2m_max": [24.1, 21.8],
-        "temperature_2m_min": [14.2, 13.9]
+        "temperature_2m_min": [14.2, 13.9],
+        "precipitation_probability_max": [20, 65]
       }
     }
     ```
 
-  - **Mapeamento para `WeatherData`:** `timezone` alimenta o fuso do modelo. `current.time` alimenta `current.observedAt`; `temperature_2m`, `apparent_temperature`, `relative_humidity_2m`, `wind_speed_10m` e `weather_code` alimentam os campos correspondentes de `CurrentWeather`. Associar `temperature_2m_max` e `temperature_2m_min` do dia local atual (`daily.time` correspondente à data local de `current.time`) às máximas/mínimas atuais. Cada índice de `daily.time` gera um `ForecastDay` com condição e máximas/mínimas do mesmo índice. Agrupar os arrays horários por data local; cada ponto mapeia `hourly.time`, `weather_code` e `temperature_2m` para um `HourlyForecast`. Manter os cinco dias e não deslocar datas quando dados estiverem ausentes.
-  - Validar o tipo e o domínio de cada valor antes de normalizar: valores ausentes, nulos ou inválidos tornam apenas o campo correspondente `null`; resposta estruturalmente ilegível é falha. Converter códigos WMO em descrições em português na aplicação, sem enviar descrições inferidas como dados da API. A resposta não fornece um timestamp de atualização da previsão: `forecastUpdatedAt` fica `null`; `generationtime_ms` é duração de processamento, não horário de atualização.
+  - **Mapeamento para `WeatherData`:** `timezone` alimenta o fuso do modelo. `current.time` alimenta `current.observedAt`; `temperature_2m`, `apparent_temperature`, `relative_humidity_2m`, `wind_speed_10m` e `weather_code` alimentam os campos correspondentes de `CurrentWeather`. `current.precipitation` → `precipitationMm`; `current.surface_pressure` → `pressureHpa`. `daily.precipitation_probability_max` → `ForecastDay.precipitationProbabilityPercent`, pelo mesmo índice da data. Associar `temperature_2m_max` e `temperature_2m_min` do dia local atual (`daily.time` correspondente à data local de `current.time`) às máximas/mínimas atuais. Cada índice de `daily.time` gera um `ForecastDay` com condição e máximas/mínimas do mesmo índice. Agrupar os arrays horários por data local; cada ponto mapeia `hourly.time`, `weather_code` e `temperature_2m` para um `HourlyForecast`. Manter os cinco dias e não deslocar datas quando dados estiverem ausentes.
+  - Validar o tipo e o domínio de cada valor antes de normalizar: precipitação finita ≥ 0 mm, pressão de superfície finita > 0 hPa e probabilidade finita entre 0 e 100 %, inclusive (zero não é ausência); valores ausentes, nulos ou inválidos tornam apenas o campo correspondente `null`; resposta estruturalmente ilegível é falha. Converter códigos WMO em descrições em português na aplicação, sem enviar descrições inferidas como dados da API. A resposta não fornece um timestamp de atualização da previsão: `forecastUpdatedAt` fica `null`; `generationtime_ms` é duração de processamento, não horário de atualização.
 
 Atribuir visivelmente os dados ao Open-Meteo com link, tanto na visão atual quanto na previsão. Informar na política de privacidade que a consulta é enviada ao provedor e divulgar a retenção conforme os termos publicados (RNF-08, RNF-09).
 

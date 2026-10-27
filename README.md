@@ -100,6 +100,13 @@ Decisões-chave:
 - **Rede isolada** em `services/` — componentes e hooks não conhecem URLs.
 - Sempre tratar **loading**, **erro** e **vazio**.
 
+### Fixture e modo offline
+
+`src/fixtures/weather.ts` exporta `MOCK_WEATHER`, uma fixture determinística
+com dados em Celsius para desenvolvimento e testes. Ela não é uma resposta
+atual da API. O shell inicial aceita a busca manualmente, mas funciona offline:
+não consulta serviços nem fabrica resultados meteorológicos.
+
 ---
 
 ## Stack
@@ -140,3 +147,44 @@ Veja [AGENTS.md](AGENTS.md) para a descrição de cada agente.
 Construído com ❤️ para capacitar times em **Spec-Driven Development** usando o poder do GitHub Copilot.
 
 </div>
+
+
+## Componentes meteorológicos standalone (P6.3–P6.5)
+
+```tsx
+import UnitToggle from "./src/components/UnitToggle";
+import CurrentWeather from "./src/components/CurrentWeather";
+import ForecastList from "./src/components/ForecastList";
+import ForecastCard from "./src/components/ForecastCard";
+```
+
+- `UnitToggle`: `{ unit: Unit, onChange: (unit: Unit) => void }`. Controlado;
+  o consumidor é dono da unidade. Dois botões com `aria-pressed` e teclado
+  nativo (Tab, Enter e Espaço), sem persistência nem estado interno duplicado.
+- `CurrentWeather`: `{ city: City, current: CurrentWeather, unit: Unit }`.
+- `ForecastList`: `{ forecastDays: ForecastDay[], unit: Unit }`; renderiza a
+  ordem e as datas recebidas, incluindo dias parciais e estado vazio.
+- `ForecastCard`: `{ day: ForecastDay, unit: Unit }`, também utilizável sozinho.
+
+Os tipos vêm de `src/types/weather.ts`; `Unit` é `celsius | fahrenheit`.
+Temperaturas internas são Celsius não arredondados; `src/lib/temperature.ts`
+converte somente no render, com empates arredondados para longe de zero e sem
+zero negativo. `src/lib/weatherCodes.ts` cobre a tabela WMO do Open-Meteo com
+texto pt-BR e emoji decorativo. `src/lib/format.ts` valida datas civis estritas
+YYYY-MM-DD e as apresenta em DD/MM/AAAA com UTC explícito, sem depender do fuso
+do dispositivo nem inferir Hoje pelo índice.
+
+Contrato adicional nullable (`number | null`):
+
+| Campo | Unidade e domínio | Fonte prevista no Open-Meteo |
+| --- | --- | --- |
+| `current.precipitationMm` | mm, finito ≥ 0 | `current.precipitation` |
+| `current.pressureHpa` | hPa, finito > 0, pressão **de superfície**, não ao nível do mar | `current.surface_pressure` |
+| `ForecastDay.precipitationProbabilityPercent` | %, finito entre 0 e 100 | `daily.precipitation_probability_max` |
+
+Nulidades são indisponíveis por campo; zero é dado válido. Sem temperatura
+atual, o painel informa indisponibilidade geral e preserva as demais métricas.
+A validação de domínio na ingestão pertence ao serviço futuro. A fixture
+`MOCK_WEATHER` é fixa, não representa uma consulta atual e inclui essas métricas.
+Não há rede, hook, estados assíncronos, expansão horária nem integração dos
+componentes no App nesta fatia; essa composição fica para P6.7/T-26.
