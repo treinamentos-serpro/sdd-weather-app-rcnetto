@@ -59,30 +59,31 @@ Questions.
 
 ## User Stories
 
-- **US-01 — Encontrar uma cidade:** Como pessoa que consulta o clima antes de
-  sair, quero pesquisar uma cidade pelo nome para selecionar a localidade certa
-  e saber como me preparar.
-- **US-02 — Distinguir localidades:** Como pessoa consultando uma cidade
-  desconhecida, quero ver região/estado e país junto ao nome da cidade para
-  evitar consultar o clima de uma localidade homônima.
-- **US-03 — Consultar condições atuais:** Como pessoa que consulta o clima antes
-  de sair, quero ver as condições atuais e os principais indicadores para
-  decidir como me preparar.
-- **US-04 — Planejar os próximos dias:** Como pessoa que planeja atividades,
-  quero consultar o resumo de hoje e dos quatro dias seguintes e, quando
-  necessário, os detalhes por hora para escolher quando realizar uma atividade.
-- **US-05 — Usar minha unidade de temperatura:** Como pessoa consultando uma
-  cidade desconhecida, quero alternar entre Celsius e Fahrenheit para entender
-  as temperaturas na unidade que prefiro.
-- **US-06 — Avaliar a atualidade dos dados:** Como pessoa usuária, quero saber
-  quando os dados meteorológicos foram atualizados para avaliar se ainda são
-  recentes.
-- **US-07 — Recuperar uma consulta com falha:** Como pessoa usuária, quero
-  receber uma explicação quando os dados não puderem ser obtidos e tentar
-  novamente para concluir minha consulta.
-- **US-08 — Entender o progresso e os resultados vazios:** Como pessoa usuária,
-  quero saber quando uma consulta está carregando ou quando minha busca não
-  encontrou cidades para decidir o que fazer em seguida.
+- **US-01 (RF-01) — Encontrar uma cidade:** Como pessoa que consulta antes de
+  sair, quero pesquisar cidades por nome completo ou parcial para selecionar
+  rapidamente a localidade cujo clima preciso consultar.
+- **US-02 (RF-01) — Distinguir cidades homônimas:** Como pessoa consultando uma
+  cidade desconhecida, quero ver cidade, região/estado e país nos resultados
+  para escolher o destino correto.
+- **US-03 (RF-02) — Consultar condições atuais:** Como pessoa que consulta
+  antes de sair, quero ver a condição do tempo, a temperatura e os principais
+  indicadores atuais para decidir como me preparar.
+- **US-04 (RF-03) — Planejar os próximos dias:** Como pessoa que planeja
+  atividades, quero consultar o resumo de hoje e dos quatro dias seguintes e
+  seus detalhes por hora para escolher quando realizar uma atividade.
+- **US-05 (RF-04) — Usar minha unidade de temperatura:** Como pessoa
+  consultando uma cidade desconhecida, quero alternar entre Celsius e
+  Fahrenheit para compreender todas as temperaturas na unidade que prefiro.
+- **US-06 (RF-05) — Avaliar a atualidade dos dados:** Como pessoa que consulta
+  antes de sair, quero ver quando os dados meteorológicos foram atualizados e
+  se estão desatualizados para avaliar se ainda posso usá-los para me preparar.
+- **US-07 (RF-06) — Recuperar uma consulta com falha:** Como pessoa que planeja
+  atividades, quero receber um aviso quando os dados não puderem ser obtidos e
+  tentar novamente para concluir meu planejamento com informações disponíveis.
+- **US-08 (RF-07) — Entender o estado da consulta:** Como pessoa que consulta
+  antes de sair, quero saber quando a busca ou a consulta está carregando e
+  quando não há cidades encontradas para entender o resultado e decidir o que
+  fazer em seguida.
 
 ## Acceptance Criteria
 
