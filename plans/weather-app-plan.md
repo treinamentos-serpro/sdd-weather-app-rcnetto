@@ -229,18 +229,35 @@ Atribuir visivelmente os dados ao Open-Meteo com link, tanto na visão atual qua
 
 ## State Management
 
-Manter o estado em hooks React, sem biblioteca externa de gerenciamento global e sem persistência local. Separar o estado de busca do estado meteorológico para que cada operação tenha seu próprio loading, sucesso, vazio e erro (RF-06, RF-07).
+Manter o estado efêmero da tela em `useWeather`, sem biblioteca externa de gerenciamento global e sem persistência local. O hook é a fonte de verdade para busca e consulta meteorológica; componentes de apresentação recebem dados/estados por props e comunicam ações por callbacks. Separar os estados de busca e forecast para que a conclusão ou falha de uma operação não esconda o estado da outra.
 
-O estado da tela inclui o termo editável, o último termo confirmado, os resultados da busca, a cidade selecionada, os dados meteorológicos, a unidade (`celsius` por padrão) e o estado de expansão dos detalhes horários. Unidade e expansão vivem apenas na memória da página e não são persistidas (RF-04, RNF-08).
+Cada operação usa um estado explícito discriminado:
 
-Derivar valores formatados e convertidos a partir dos dados normalizados sempre que possível, em vez de duplicá-los no estado. Em buscas concorrentes, cancelar a operação anterior ou descartar sua resposta tardia; somente a busca mais recente pode atualizar resultados (critério de aceite RF-01).
+```ts
+type AsyncState<T> =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; data: T }
+  | { status: 'empty' }
+  | { status: 'error'; message: string };
+```
+
+`idle` representa operação ainda não iniciada; `loading`, requisição em andamento; `success`, resultado disponível; `empty`, busca concluída sem cidades (ou consulta sem quaisquer dados utilizáveis); `error`, falha que permite nova tentativa manual. `empty` não é erro. Resposta parcial com dados úteis permanece `success`, com campos individuais indisponíveis, em vez de ser reduzida a `empty`.
+
+O estado da tela contém o termo editável e confirmado, resultados de geocoding, cidade selecionada, dados meteorológicos normalizados, unidade (`celsius` por padrão) e dias expandidos. A unidade e expansão são apenas em memória; recarregar restaura Celsius e não recupera consultas (RF-04, RNF-08).
+
+Converter cada temperatura visível na renderização, derivando de seu valor Celsius original e da unidade selecionada. Para Fahrenheit, usar `C × 9/5 + 32`; em seguida arredondar ao inteiro mais próximo, com empates de 0,5 para longe de zero. Não armazenar valores convertidos/arredondados nem iniciar novo request ao alternar unidade (RF-04).
+
+Em buscas concorrentes, cancelar a operação anterior quando possível ou descartar sua resposta tardia; após timeout e retry, a tentativa anterior também não pode substituir o resultado mais novo. Encerrar cada request em no máximo 10 segundos e manter o estado final de cada operação consistente, inclusive em erro e timeout (RF-01, RF-06).
 
 ## Error Handling
 
-- **Loading:** indicar visualmente e de forma acessível cada busca ou consulta em andamento; encerrar o indicador em sucesso, resultado vazio ou falha (RF-07, RNF-05).
+- **Rede:** falhas de conexão e cancelamento inesperado entram em `error`, com mensagem clara e ação de retry manual da mesma operação, preservando o termo confirmado ou a cidade selecionada.
+- **API:** respostas HTTP não bem-sucedidas e payloads estruturalmente ilegíveis entram em `error`; não renderizar payload inválido como sucesso. Não expor detalhes técnicos ou conteúdo bruto da resposta à pessoa usuária.
+- **Timeout:** encerrar cada busca ou consulta após 10 segundos, sinalizar `error` e permitir retry manual. Ignorar qualquer resposta que chegue após timeout se outra tentativa já tiver começado (RF-06).
+- **Loading:** indicar visualmente e de forma acessível cada busca ou consulta em andamento; encerrar o indicador ao atingir sucesso, vazio ou erro (RF-07, RNF-05).
 - **Busca vazia:** não chamar o serviço; orientar a pessoa a informar um nome e manter o campo editável (RF-07).
 - **Busca sem resultados:** exibir estado vazio distinto de erro e permitir ajustar o termo (RF-07).
-- **Falha de rede, API ou parsing:** informar que a operação não pôde ser concluída e oferecer nova tentativa manual, preservando o termo confirmado ou a cidade selecionada (RF-06). Usar timeout de 10 segundos por operação e não tratar parsing inválido como resposta válida.
 - **Resposta tardia:** ignorar respostas de consultas anteriores que terminem após uma operação mais recente.
 - **Dados incompletos ou inválidos:** apresentar cada campo válido e marcar individualmente como indisponíveis os valores ausentes, nulos ou fora do domínio (por exemplo, umidade fora de 0–100% e vento negativo). Sem temperatura atual, informar indisponibilidade das condições atuais e manter a previsão disponível. Dias ausentes não deslocam as datas; respostas ilegíveis são falhas (RF-08).
 - **Atualidade:** observações com mais de 60 minutos podem ser exibidas apenas com aviso explícito. Timestamp ausente, inválido ou no futuro não deve ser identificado como recente. Se não houver horário de atualização da previsão, informar que ele não foi fornecido (RF-05, RNF-06).
