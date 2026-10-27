@@ -12,15 +12,17 @@ O briefing define as capacidades principais, mas ainda não especifica público-
 - **RF-02 — Consultar clima atual:** apresentar as condições meteorológicas atuais para a cidade selecionada.
 - **RF-03 — Consultar previsão:** apresentar a previsão do tempo para cinco dias para a cidade selecionada.
 - **RF-04 — Alternar unidade de temperatura:** permitir alternar entre Celsius e Fahrenheit e exibir as temperaturas na unidade escolhida.
-- **RF-05 — Usar em dispositivos móveis:** disponibilizar as funcionalidades principais em dispositivos móveis.
 
 ## Requisitos Não-Funcionais
 
-- **RNF-01 — Responsividade:** a interface deve se adaptar a dispositivos móveis; tamanhos de tela e navegadores suportados precisam ser definidos.
-- **RNF-02 — Usabilidade:** busca, seleção de cidade, consulta da previsão e troca de unidade devem ser compreensíveis e utilizáveis nos dispositivos suportados.
-- **RNF-03 — Desempenho:** o tempo aceitável para buscar uma cidade e carregar as informações meteorológicas ainda precisa ser definido.
-- **RNF-04 — Disponibilidade e resiliência:** o comportamento esperado em falhas ou indisponibilidade da fonte de dados precisa ser definido.
-- **RNF-05 — Acessibilidade:** os requisitos de acessibilidade, incluindo navegação por teclado e suporte a tecnologias assistivas, precisam ser acordados.
+- **RNF-01 — Responsividade e uso móvel:** as funcionalidades principais devem ser utilizáveis em larguras de tela de 320 px a 1440 px, sem rolagem horizontal. Dispositivos e navegadores suportados precisam ser confirmados.
+- **RNF-02 — Usabilidade:** em testes com usuários representativos, pelo menos 90% devem conseguir buscar uma cidade, consultar o clima atual e visualizar a previsão sem ajuda. O público e o protocolo de teste precisam ser definidos.
+- **RNF-03 — Desempenho:** em condições de rede e disponibilidade da fonte de dados a definir, 95% das buscas e consultas meteorológicas devem apresentar os resultados em até 3 segundos.
+- **RNF-04 — Disponibilidade e resiliência:** a meta inicial é disponibilidade mensal de 99,5%. Se a fonte de dados estiver indisponível, a aplicação deve informar a falha e não apresentar dados desatualizados como atuais.
+- **RNF-05 — Acessibilidade:** a interface deve atender ao nível AA da WCAG 2.2, incluindo operação por teclado e compatibilidade com leitores de tela.
+- **RNF-06 — Atualização dos dados:** a interface deve informar o horário da última atualização e sinalizar dados considerados desatualizados; o limite de desatualização precisa ser definido.
+
+> As metas numéricas acima são propostas iniciais para discussão e devem ser validadas antes de se tornarem critérios de aceite.
 
 ## Riscos
 
@@ -28,7 +30,7 @@ O briefing define as capacidades principais, mas ainda não especifica público-
 - **Resultados ambíguos na busca:** cidades com nomes iguais ou semelhantes podem levar à seleção de uma localidade incorreta.
 - **Interpretações diferentes de “cinco dias”:** o período pode ser contado a partir do dia atual ou corresponder aos cinco dias seguintes, gerando expectativas divergentes.
 - **Conversão ou apresentação inconsistente de temperatura:** trocar a unidade sem atualizar todas as temperaturas exibidas pode confundir o usuário.
-- **Experiência móvel insuficiente:** sem critérios de dispositivos e tamanhos de tela, a cobertura da experiência móvel pode ficar incompleta.
+- **Experiência móvel insuficiente:** sem confirmação da matriz de dispositivos e navegadores, a cobertura da responsividade pode ficar incompleta.
 - **Escopo meteorológico indefinido:** o briefing não esclarece quais dados além da temperatura devem compor o clima atual e a previsão.
 
 ## Perguntas em Aberto
@@ -39,8 +41,10 @@ O briefing define as capacidades principais, mas ainda não especifica público-
 - A previsão de cinco dias inclui o dia atual? Deve ser apresentada por dia, por hora ou em ambos os formatos?
 - A unidade escolhida deve permanecer após recarregar a aplicação ou iniciar uma nova sessão?
 - Qual deve ser o comportamento quando a busca não encontra resultados, a fonte de dados falha ou a conexão é perdida?
-- Quais idiomas, navegadores, dispositivos e tamanhos de tela devem ser suportados?
-- Quais metas de desempenho, disponibilidade, acessibilidade e atualização dos dados são esperadas?
+- Quais idiomas, navegadores e dispositivos devem ser suportados? A faixa inicial de 320 px a 1440 px é adequada?
+- As metas propostas de usabilidade (90%), desempenho (95% em até 3 segundos) e disponibilidade (99,5% ao mês) são aceitáveis? Em quais condições devem ser medidas?
+- Qual limite de idade dos dados deve provocar um aviso de desatualização?
+- A WCAG 2.2 nível AA é o padrão de acessibilidade esperado?
 - Há requisitos de privacidade, retenção de dados ou analytics associados ao uso da aplicação?
 
 ## Suposições
@@ -48,5 +52,5 @@ O briefing define as capacidades principais, mas ainda não especifica público-
 - A pesquisa e a consulta meteorológica partem de uma cidade escolhida pelo usuário; localização automática não foi solicitada.
 - Celsius e Fahrenheit são unidades de apresentação para a mesma informação de temperatura, sem alterar a cidade ou o período consultado.
 - “Previsão de 5 dias” significa uma previsão associada à cidade selecionada para um período de cinco dias, mas a inclusão do dia atual permanece pendente de confirmação.
-- A aplicação deve ser utilizável em telas móveis, embora a matriz de dispositivos e os critérios de responsividade ainda precisem ser definidos.
+- A aplicação deve oferecer as funcionalidades principais em telas móveis; a faixa de largura proposta é um ponto inicial sujeito à confirmação.
 - O briefing não solicita cadastro, favoritos, notificações, mapas ou outros recursos; eles não fazem parte do escopo confirmado nesta análise.
