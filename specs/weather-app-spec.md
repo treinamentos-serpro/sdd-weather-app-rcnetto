@@ -87,22 +87,195 @@ Questions.
 
 ## Acceptance Criteria
 
-Os critérios abaixo tornam verificáveis os requisitos funcionais. Dados
-meteorológicos usados nos testes devem incluir valores e horários controlados,
-inclusive casos nas duas unidades de temperatura.
+Os cenários abaixo usam respostas meteorológicas e horários controlados para
+permitir resultados determinísticos nos testes automatizados. Cada cenário
+identifica o requisito funcional que valida.
 
 ### AC-RF-01 — Pesquisar e selecionar cidades
 
-- Ao pesquisar um nome completo ou parcial de cidade, resultados compatíveis
-  com a consulta são apresentados, incluindo resultados de diferentes países.
-- Consultas que diferem apenas por maiúsculas/minúsculas ou acentos retornam
-  resultados equivalentes.
-- Cada resultado identifica a cidade e o país; quando disponível, também
-  identifica a região/estado.
-- Para duas cidades homônimas, a lista apresenta informação de região/estado
-  quando disponível e país, de forma que os resultados possam ser distinguidos.
-- Ao selecionar um resultado, o produto apresenta o clima correspondente à
-  localidade selecionada.
+#### Cenário: buscar por nome completo ou parcial
+
+- **Given:** o catálogo de teste contém cidades em mais de um país e uma delas
+  tem o nome "São Paulo"
+- **When:** a pessoa pesquisa "São Paulo" e, em outra consulta, "São"
+- **Then:** ambas as consultas retornam as cidades correspondentes existentes
+  no catálogo, identificando cidade, país e região/estado quando disponível
+
+#### Cenário: ignorar diferenças de acentuação e capitalização
+
+- **Given:** o catálogo de teste contém a cidade "São Paulo"
+- **When:** a pessoa pesquisa "sao paulo", "SÃO PAULO" e "São Paulo"
+- **Then:** as três consultas retornam o mesmo conjunto de localidades
+
+#### Cenário: distinguir cidades homônimas
+
+- **Given:** o catálogo de teste contém duas cidades com o nome "San José",
+  em países diferentes, com suas regiões disponíveis
+- **When:** a pessoa pesquisa "San José"
+- **Then:** os resultados exibem para cada cidade o nome, a região/estado e o
+  país, de modo que as duas localidades possam ser distinguidas
+
+#### Cenário: consultar o clima da cidade selecionada
+
+- **Given:** os resultados incluem duas localidades distintas e há respostas
+  meteorológicas controladas para ambas
+- **When:** a pessoa seleciona uma das localidades
+- **Then:** o produto exibe os dados associados à localidade selecionada, não
+  os dados da outra localidade
+
+### AC-RF-02 — Consultar condições atuais
+
+#### Cenário: exibir todos os indicadores atuais disponíveis
+
+- **Given:** a pessoa selecionou uma cidade e a resposta controlada contém
+  condição, temperatura atual, sensação térmica, máxima, mínima, umidade e vento
+- **When:** a consulta meteorológica termina com sucesso
+- **Then:** a interface exibe cada um desses sete indicadores com os valores
+  correspondentes à resposta da cidade selecionada
+
+### AC-RF-03 — Consultar previsão diária e horária
+
+#### Cenário: exibir os cinco dias da previsão
+
+- **Given:** a pessoa selecionou uma cidade e a resposta controlada contém a
+  previsão diária de hoje e dos quatro dias seguintes no fuso local da cidade
+- **When:** a consulta meteorológica termina com sucesso
+- **Then:** a interface exibe exatamente cinco resumos diários, identificados
+  pelas datas locais de hoje até o quarto dia seguinte
+
+#### Cenário: consultar detalhes por hora
+
+- **Given:** a previsão diária da cidade está visível e a resposta controlada
+  contém detalhes horários
+- **When:** a pessoa solicita os detalhes por hora
+- **Then:** a interface apresenta os horários e os dados horários da previsão
+  daquela cidade
+
+#### Cenário: apresentar datas e horários no fuso da cidade
+
+- **Given:** o fuso local da cidade difere do fuso do dispositivo e os dados
+  controlados incluem datas e horas nos dois fusos
+- **When:** a pessoa consulta a previsão
+- **Then:** as datas e horas exibidas correspondem ao fuso local da cidade e
+  "hoje" corresponde à data local da cidade
+
+### AC-RF-04 — Alternar unidade de temperatura
+
+#### Cenário: iniciar uma visita em Celsius
+
+- **Given:** a pessoa inicia uma nova visita ao produto
+- **When:** dados meteorológicos com temperaturas estão disponíveis
+- **Then:** todas as temperaturas são exibidas em Celsius
+
+#### Cenário: alternar todas as temperaturas para Fahrenheit
+
+- **Given:** o clima atual, os resumos diários e os detalhes horários estão
+  visíveis em Celsius
+- **When:** a pessoa seleciona Fahrenheit
+- **Then:** todas as temperaturas visíveis passam a ser exibidas em Fahrenheit
+  e nenhuma temperatura permanece identificada em Celsius
+
+#### Cenário: alternar todas as temperaturas para Celsius
+
+- **Given:** o clima atual, os resumos diários e os detalhes horários estão
+  visíveis em Fahrenheit
+- **When:** a pessoa seleciona Celsius
+- **Then:** todas as temperaturas visíveis passam a ser exibidas em Celsius e
+  nenhuma temperatura permanece identificada em Fahrenheit
+
+#### Cenário: converter e arredondar temperaturas
+
+- **Given:** a resposta controlada contém temperaturas em Celsius conhecidas,
+  incluindo valores cuja conversão resulta em fração
+- **When:** a pessoa alterna entre Celsius e Fahrenheit
+- **Then:** cada temperatura corresponde à conversão da resposta original
+  para a unidade selecionada, arredondada para o grau inteiro mais próximo
+
+#### Cenário: restaurar Celsius ao recarregar ou iniciar nova visita
+
+- **Given:** a pessoa selecionou Fahrenheit durante uma visita
+- **When:** recarrega a página ou inicia uma nova visita
+- **Then:** a unidade apresentada volta a ser Celsius
+
+### AC-RF-05 — Informar atualização dos dados
+
+#### Cenário: exibir horário da última atualização
+
+- **Given:** a resposta controlada inclui um horário conhecido de atualização
+- **When:** os dados meteorológicos são apresentados
+- **Then:** a interface exibe esse horário de atualização
+
+#### Cenário: sinalizar dados com mais de uma hora
+
+- **Given:** o relógio de teste está fixado e os dados têm idade superior a
+  uma hora
+- **When:** os dados meteorológicos são apresentados
+- **Then:** a interface exibe a indicação de dados desatualizados
+
+#### Cenário: não sinalizar dados com até uma hora
+
+- **Given:** o relógio de teste está fixado e os dados têm idade igual ou
+  inferior a uma hora
+- **When:** os dados meteorológicos são apresentados
+- **Then:** a interface não exibe a indicação de dados desatualizados com base
+  no limite de uma hora
+
+### AC-RF-06 — Tratar indisponibilidade e permitir nova tentativa
+
+#### Cenário: informar falha inicial de conexão ou provedor
+
+- **Given:** a pessoa solicitou dados meteorológicos e a conexão falha ou a
+  fonte responde com falha
+- **When:** a consulta termina sem dados atuais
+- **Then:** a interface informa que não foi possível obter os dados, oferece
+  uma ação de nova tentativa e não apresenta dados antigos como atuais
+
+#### Cenário: nova tentativa concluída com sucesso
+
+- **Given:** a interface apresenta uma falha e a fonte está configurada para
+  responder com sucesso à próxima consulta
+- **When:** a pessoa aciona a nova tentativa
+- **Then:** uma nova consulta é realizada e os dados recebidos com sucesso são
+  apresentados para a cidade selecionada
+
+#### Cenário: nova tentativa também falha
+
+- **Given:** a interface apresenta uma falha e a fonte está configurada para
+  falhar novamente
+- **When:** a pessoa aciona a nova tentativa
+- **Then:** a interface continua informando a falha e mantém disponível a ação
+  de nova tentativa
+
+### AC-RF-07 — Comunicar estados de consulta
+
+#### Cenário: indicar carregamento durante a busca de cidades
+
+- **Given:** a busca de cidades foi iniciada e a resposta controlada ainda não
+  foi concluída
+- **When:** a busca está em andamento
+- **Then:** a interface apresenta um estado de carregamento da busca
+
+#### Cenário: indicar carregamento durante a consulta meteorológica
+
+- **Given:** a consulta meteorológica foi iniciada e a resposta controlada
+  ainda não foi concluída
+- **When:** a consulta está em andamento
+- **Then:** a interface apresenta um estado de carregamento dos dados
+
+#### Cenário: informar busca sem resultados e permitir ajuste
+
+- **Given:** a pessoa pesquisou um termo válido e a resposta da busca contém
+  zero cidades
+- **When:** a busca termina
+- **Then:** a interface informa que nenhuma cidade foi encontrada e permite
+  que a pessoa altere a consulta e pesquise novamente
+
+#### Cenário: distinguir resultado vazio de falha
+
+- **Given:** uma busca termina com sucesso e retorna zero cidades
+- **When:** a interface apresenta o resultado
+- **Then:** a interface informa que não foram encontradas cidades e não
+  apresenta o estado de erro de conexão nem resultados meteorológicos
 
 ### AC-RF-02 — Consultar condições atuais
 
