@@ -1,5 +1,13 @@
 # Análise de Discovery — Aplicação de Previsão do Tempo
 
+## Resumo Executivo
+
+- O produto será um site responsivo, em português, para o público geral consultar o clima de cidades do mundo todo.
+- A experiência mostrará condições atuais e previsão para hoje e os quatro dias seguintes, com detalhes horários opcionais.
+- O usuário poderá alternar entre Celsius e Fahrenheit; o padrão será Celsius, sem salvar a preferência entre visitas.
+- Os dados virão do Open-Meteo; informações com mais de uma hora serão sinalizadas, e falhas terão aviso e opção de nova tentativa.
+- Antes de fechar a especificação, stakeholders devem validar metas de sucesso, cobertura de dispositivos, condições dos dados e critérios de qualidade.
+
 ## Contexto
 
 A empresa solicitou uma aplicação de previsão do tempo para que usuários consultem informações meteorológicas de cidades. A experiência deve permitir localizar uma cidade, visualizar as condições atuais e a previsão para os próximos cinco dias, escolher entre Celsius e Fahrenheit e utilizar a aplicação em dispositivos móveis.
