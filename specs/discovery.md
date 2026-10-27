@@ -6,6 +6,28 @@ A empresa solicitou uma aplicação de previsão do tempo para que usuários con
 
 O briefing define as capacidades principais, mas ainda não especifica público-alvo, fontes de dados, regras de busca, detalhes das informações meteorológicas nem critérios de qualidade mensuráveis. Esses pontos devem ser esclarecidos antes de consolidar a especificação do produto.
 
+## Personas Hipotéticas
+
+As personas abaixo são hipóteses de trabalho derivadas das funções do briefing, não segmentos confirmados por pesquisa. Os limites de tempo são critérios candidatos para validar com usuários.
+
+### Persona 1 — Pessoa que consulta antes de sair
+
+- **Objetivo principal:** verificar rapidamente as condições atuais e decidir como se preparar para sair.
+- **Contexto de uso:** principalmente mobile, em uma consulta breve antes ou durante o deslocamento; pode consultar uma cidade habitual.
+- **Métrica de sucesso do ponto de vista da pessoa:** consegue encontrar ou selecionar a cidade e consultar o clima atual em até 30 segundos, sem precisar repetir a busca.
+
+### Persona 2 — Pessoa que planeja atividades
+
+- **Objetivo principal:** consultar os próximos cinco dias para escolher quando realizar uma atividade ou organizar a semana.
+- **Contexto de uso:** principalmente desktop durante o planejamento; pode voltar ao mobile para conferir a previsão.
+- **Métrica de sucesso do ponto de vista da pessoa:** consegue localizar a cidade e entender a previsão dos cinco dias em até dois minutos, sem dúvida sobre quais datas estão sendo exibidas.
+
+### Persona 3 — Pessoa consultando uma cidade desconhecida
+
+- **Objetivo principal:** encontrar o clima de um destino e visualizar a temperatura na unidade que prefere.
+- **Contexto de uso:** principalmente mobile durante a preparação ou o deslocamento; pode não conhecer detalhes administrativos da cidade.
+- **Métrica de sucesso do ponto de vista da pessoa:** identifica e seleciona a localidade correta e vê a temperatura em sua unidade preferida em até um minuto.
+
 ## Requisitos Funcionais
 
 - **RF-01 — Buscar cidades:** permitir que o usuário pesquise uma cidade e selecione o resultado desejado.
