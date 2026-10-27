@@ -28,14 +28,15 @@ Questions.
 
 - **RF-01 — Pesquisar e selecionar cidades:** a pessoa usuária deve poder
   pesquisar cidades disponíveis no catálogo mundial do provedor por nome
-  completo ou parcial. Antes da busca, espaços no início e no fim são removidos;
-  a correspondência ignora maiúsculas/minúsculas e acentos, mas não corrige
-  erros de digitação. Cada resultado identifica cidade, país e região/estado
-  quando disponível. A aplicação exibe até 10 resultados na ordem de relevância
-  retornada pelo serviço; não oferece paginação nesta versão. A busca é enviada
-  somente quando a pessoa confirma a consulta, não a cada tecla. A seleção
-  mantém a identidade exata da localidade retornada, inclusive quando há
-  cidades homônimas.
+  completo ou prefixo parcial, de acordo com as regras do Geocoding da
+  Open-Meteo. Antes da busca, espaços no início e no fim são removidos; a
+  correspondência ignora maiúsculas/minúsculas e acentos, mas não corrige erros
+  de digitação nem procura trechos no meio/fim do nome. Cada resultado
+  identifica cidade, país e região/estado quando disponível. A aplicação exibe
+  até 10 resultados na ordem de relevância retornada pelo serviço; não oferece
+  paginação nesta versão. A busca é enviada somente quando a pessoa confirma a
+  consulta, não a cada tecla. A seleção mantém a identidade exata da localidade
+  retornada, inclusive quando há cidades homônimas.
 - **RF-02 — Consultar condições atuais:** para a cidade selecionada, o produto
   deve apresentar em português a condição do tempo, temperatura atual, sensação
   térmica, máxima e mínima do dia local, umidade em porcentagem e velocidade do
@@ -137,16 +138,16 @@ identifica o requisito funcional que valida.
 
 ### AC-RF-01 — Pesquisar e selecionar cidades
 
-#### Cenário: buscar por nome completo ou parcial
+#### Cenário: buscar por nome completo ou prefixo parcial
 
 - **Given:** o catálogo controlado contém dois resultados de fixture chamados
-  "São Paulo" em países distintos e um resultado "Santo André"
+  "São Paulo" em países distintos e um resultado "Paulo Afonso"
 - **When:** a pessoa pesquisa "São Paulo" e depois "São"
 - **Then:** a busca exata inclui as duas localidades chamadas "São Paulo"; a
-  busca parcial inclui as localidades cujo nome contém "São", sem incluir
-  nomes que não correspondam; no máximo 10 resultados são exibidos na ordem
-  recebida do serviço e cada resultado identifica cidade, país e região/estado
-  quando disponível
+  busca parcial inclui localidades cujo nome começa com "São", sem incluir
+  "Paulo Afonso"; no máximo 10 resultados são exibidos na ordem recebida do
+  serviço e cada resultado identifica cidade, país e região/estado quando
+  disponível
 
 #### Cenário: ignorar diferenças de acentuação e capitalização
 

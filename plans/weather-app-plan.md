@@ -188,7 +188,7 @@ Usar somente os serviços oficiais definidos na spec. Não configurar chave nest
 
 - **Geocoding**
   - **URL:** `https://geocoding-api.open-meteo.com/v1/search`
-  - **Parâmetros:** `name` (termo confirmado, sem espaços externos), `count=10`, `language=pt`, `format=json`. A API já faz correspondência sem distinção de maiúsculas/minúsculas e acentos; não adicionar correção de erros de digitação. Resultados vazios podem vir sem a propriedade `results`.
+  - **Parâmetros:** `name` (termo confirmado, sem espaços externos), `count=10`, `language=pt`, `format=json`. Seguir a regra do provedor: buscas de dois caracteres exigem correspondência exata; a partir de três caracteres, a correspondência é por prefixo normalizado, sem distinção de maiúsculas/minúsculas e acentos. Não há busca por substring no meio/fim do nome nem correção de erros de digitação. Resultados vazios podem vir sem a propriedade `results`.
   - **Exemplo resumido de resposta:**
 
     ```json
